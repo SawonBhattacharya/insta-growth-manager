@@ -1,0 +1,103 @@
+name: Generate Instagram Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      data_file:
+        description: >
+          Path to the .xlsx data file inside the repo
+          (e.g. data/insta monthly review.xlsx).
+          Leave blank to auto-detect the newest .xlsx in data/.
+        required: false
+        default: ''
+        type: string
+      model:
+        description: 'OpenAI model to use (default: gpt-4.1-mini)'
+        required: false
+        default: 'gpt-4.1-mini'
+        type: string
+      dry_run:
+        description: 'Parse and compute KPIs only — skip OpenAI calls'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+
+      # ── Resolve which .xlsx file to use ──────────────────────────
+      - name: Resolve data file
+        id: resolve
+        run: |
+          INPUT_FILE="${{ github.event.inputs.data_file }}"
+
+          if [ -n "$INPUT_FILE" ]; then
+            # User supplied an explicit path
+            if [ ! -f "$INPUT_FILE" ]; then
+              echo "::error::File not found: $INPUT_FILE"
+              echo "Available .xlsx files:"
+              find data/ -name '*.xlsx' -type f 2>/dev/null || echo "  (none)"
+              exit 1
+            fi
+            echo "excel_path=$INPUT_FILE" >> "$GITHUB_OUTPUT"
+          else
+            # Auto-detect: pick the most recently modified .xlsx in data/
+            FOUND=$(find data/ -name '*.xlsx' -type f -printf '%T@ %p\n' 2>/dev/null \
+                    | sort -rn | head -1 | cut -d' ' -f2-)
+            if [ -z "$FOUND" ]; then
+              echo "::error::No .xlsx files found in data/ directory."
+              exit 1
+            fi
+            echo "Auto-detected: $FOUND"
+            echo "excel_path=$FOUND" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Generate report ──────────────────────────────────────────
+      - name: Generate report (dry-run)
+        if: ${{ github.event.inputs.dry_run == 'true' }}
+        run: |
+          python -m insta_review \
+            --excel "${{ steps.resolve.outputs.excel_path }}" \
+            --dry-run \
+            --out-dir outputs
+
+      - name: Generate report (full)
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python -m insta_review \
+            --excel "${{ steps.resolve.outputs.excel_path }}" \
+            --niche-context "insta_review/context/niche_context.md" \
+            --strategist-prompt "insta_review/prompts/strategist_prompt.txt" \
+            --content-prompt "insta_review/prompts/content_creator_prompt.txt" \
+            --model "${{ github.event.inputs.model }}" \
+            --out-dir outputs
+
+      # ── Upload results ───────────────────────────────────────────
+      - name: Upload outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: instagram-report-${{ github.run_number }}
+          path: outputs/
+          retention-days: 90

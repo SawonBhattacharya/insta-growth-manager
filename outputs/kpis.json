@@ -1,0 +1,19 @@
+{
+  "period_start": "2026-04-17",
+  "period_end": "2026-05-14",
+  "days_count": 28,
+  "total_views": 9091,
+  "total_reach": 4945,
+  "total_interactions": 455,
+  "total_profile_visits": 123,
+  "total_follows": 6,
+  "engagement_rate": 0.09201213346814964,
+  "follow_conversion_rate": 0.04878048780487805,
+  "view_to_reach_ratio": 1.838422649140546,
+  "dead_days_count": 5,
+  "avg_reach_per_day": 176.60714285714286,
+  "avg_views_per_day": 324.67857142857144,
+  "reach_growth_wow": -0.2217573221757322,
+  "best_views_day": "2026-05-02",
+  "best_reach_day": "2026-05-02"
+}
