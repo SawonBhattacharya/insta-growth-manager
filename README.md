@@ -21,13 +21,13 @@ No external dependencies — the parser reads `.xlsx` files using the Python sta
 For AI generation, copy `.env.example` to `.env` and replace the placeholder key, or set:
 
 ```powershell
-$env:OPENAI_API_KEY="your_api_key"
+$env:GROQ_API_KEY="your_api_key"
 ```
 
 Optionally set a model:
 
 ```powershell
-$env:OPENAI_MODEL="gpt-4.1-mini"
+$env:GROQ_MODEL="llama-3.1-8b-instant"
 ```
 
 ## Quick Start (Local)
@@ -62,7 +62,7 @@ A manual workflow is available to generate reports without a local setup.
 ### One-Time Setup
 
 1. Go to your repo **Settings → Secrets and variables → Actions**.
-2. Add a secret named `OPENAI_API_KEY` with your OpenAI API key.
+2. Add a secret named `GROQ_API_KEY` with your Groq API key.
 
 ### Running the Workflow
 
@@ -73,8 +73,8 @@ A manual workflow is available to generate reports without a local setup.
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `data_file` | No | *(auto-detect)* | Path to the `.xlsx` file in the repo, e.g. `data/insta monthly review.xlsx`. Leave blank to auto-pick the newest file in `data/`. |
-| `model` | No | `gpt-4.1-mini` | OpenAI model to use. |
-| `dry_run` | No | `false` | Check to parse and compute KPIs only (skip OpenAI calls). |
+| `model` | No | `llama-3.1-8b-instant` | Groq model to use. |
+| `dry_run` | No | `false` | Check to parse and compute KPIs only (skip Groq calls). |
 
 4. Once the run completes, download the generated reports from the **Artifacts** section at the bottom of the run page.
 
@@ -100,7 +100,7 @@ insta-growth-manager/
 │   ├── prompts/           # Strategist & content creator prompts
 │   ├── cli.py             # CLI argument parsing
 │   ├── kpis.py            # KPI calculations
-│   ├── llm.py             # OpenAI API client
+│   ├── llm.py             # Groq API client
 │   ├── models.py          # Data models (DailyMetric, KPIReport)
 │   ├── workflow.py        # End-to-end orchestration
 │   └── xlsx_reader.py     # .xlsx parser (stdlib only)

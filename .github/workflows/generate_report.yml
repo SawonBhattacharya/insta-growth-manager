@@ -4,20 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       data_file:
-        description: >
-          Path to the .xlsx data file inside the repo
-          (e.g. data/insta monthly review.xlsx).
-          Leave blank to auto-detect the newest .xlsx in data/.
-        required: false
-        default: ''
-        type: string
+        description: 'Select the data file to generate the report from'
+        required: true
+        type: choice
+        options:
+          # ── Add new .xlsx files here as you upload them ──
+          - 'data/insta monthly review.xlsx'
       model:
-        description: 'OpenAI model to use (default: gpt-4.1-mini)'
+        description: 'Groq model to use (default: llama-3.1-8b-instant)'
         required: false
-        default: 'gpt-4.1-mini'
+        default: 'llama-3.1-8b-instant'
         type: string
       dry_run:
-        description: 'Parse and compute KPIs only — skip OpenAI calls'
+        description: 'Parse and compute KPIs only — skip Groq API calls'
         required: false
         default: false
         type: boolean
@@ -45,32 +44,17 @@ jobs:
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
 
-      # ── Resolve which .xlsx file to use ──────────────────────────
-      - name: Resolve data file
+      # ── Validate selected data file ─────────────────────────────
+      - name: Validate data file
         id: resolve
         run: |
           INPUT_FILE="${{ github.event.inputs.data_file }}"
-
-          if [ -n "$INPUT_FILE" ]; then
-            # User supplied an explicit path
-            if [ ! -f "$INPUT_FILE" ]; then
-              echo "::error::File not found: $INPUT_FILE"
-              echo "Available .xlsx files:"
-              find data/ -name '*.xlsx' -type f 2>/dev/null || echo "  (none)"
-              exit 1
-            fi
-            echo "excel_path=$INPUT_FILE" >> "$GITHUB_OUTPUT"
-          else
-            # Auto-detect: pick the most recently modified .xlsx in data/
-            FOUND=$(find data/ -name '*.xlsx' -type f -printf '%T@ %p\n' 2>/dev/null \
-                    | sort -rn | head -1 | cut -d' ' -f2-)
-            if [ -z "$FOUND" ]; then
-              echo "::error::No .xlsx files found in data/ directory."
-              exit 1
-            fi
-            echo "Auto-detected: $FOUND"
-            echo "excel_path=$FOUND" >> "$GITHUB_OUTPUT"
+          if [ ! -f "$INPUT_FILE" ]; then
+            echo "::error::File not found: $INPUT_FILE"
+            exit 1
           fi
+          echo "Using: $INPUT_FILE"
+          echo "excel_path=$INPUT_FILE" >> "$GITHUB_OUTPUT"
 
       # ── Generate report ──────────────────────────────────────────
       - name: Generate report (dry-run)
@@ -84,7 +68,7 @@ jobs:
       - name: Generate report (full)
         if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: |
           python -m insta_review \
             --excel "${{ steps.resolve.outputs.excel_path }}" \

@@ -13,8 +13,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--strategist-prompt", help="Path to strategist_prompt.txt.")
     parser.add_argument("--content-prompt", help="Path to content_creator_prompt.txt.")
     parser.add_argument("--out-dir", default="outputs", help="Directory for generated files.")
-    parser.add_argument("--model", help="OpenAI model override.")
-    parser.add_argument("--dry-run", action="store_true", help="Parse metrics and KPIs only; do not call OpenAI.")
+    parser.add_argument("--model", help="Groq model override.")
+    parser.add_argument("--dry-run", action="store_true", help="Parse metrics and KPIs only; do not call Groq.")
     args = parser.parse_args(argv)
 
     metrics, kpis = run_workflow(

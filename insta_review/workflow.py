@@ -5,7 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from .kpis import calculate_kpis
-from .llm import OpenAIClient
+from .llm import GroqClient
 from .models import DailyMetric, KPIReport
 from .xlsx_reader import read_daily_metrics
 
@@ -47,7 +47,7 @@ def run_workflow(
     strategist_prompt = Path(strategist_prompt_path).read_text(encoding="utf-8")
     content_prompt = Path(content_prompt_path).read_text(encoding="utf-8")
 
-    client = OpenAIClient(model=model)
+    client = GroqClient(model=model)
     strategy_report = client.complete(
         strategist_prompt,
         {
