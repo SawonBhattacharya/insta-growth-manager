@@ -83,5 +83,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: instagram-report-${{ github.run_number }}
-          path: outputs/
+          path: outputs/report.html
           retention-days: 90

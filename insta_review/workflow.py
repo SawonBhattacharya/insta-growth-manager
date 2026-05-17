@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import json
 from datetime import date, timedelta
 from pathlib import Path
 
 from .kpis import calculate_kpis
 from .llm import GroqClient
 from .models import DailyMetric, KPIReport
+from .report import write_html_report
 from .xlsx_reader import read_daily_metrics
 
 
@@ -25,10 +25,8 @@ def run_workflow(
     metrics = read_daily_metrics(excel_path)
     kpis = calculate_kpis(metrics)
 
-    _write_json(out_path / "daily_metrics.json", [day.to_json() for day in metrics])
-    _write_json(out_path / "kpis.json", kpis.to_json())
-
     if dry_run:
+        write_html_report(out_path / "report.html", metrics, kpis)
         return metrics, kpis
 
     missing = [
@@ -56,7 +54,6 @@ def run_workflow(
             "niche_context": niche_context,
         },
     )
-    (out_path / "strategy_report.md").write_text(strategy_report, encoding="utf-8")
 
     content_plan = client.complete(
         content_prompt,
@@ -66,13 +63,9 @@ def run_workflow(
             "week": _next_week_label(kpis.period_end),
         },
     )
-    (out_path / "weekly_content_plan.md").write_text(content_plan, encoding="utf-8")
+    write_html_report(out_path / "report.html", metrics, kpis, strategy_report, content_plan)
 
     return metrics, kpis
-
-
-def _write_json(path: Path, payload: object) -> None:
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _next_week_label(period_end: date) -> str:

@@ -9,14 +9,14 @@ It reads Instagram monthly review Excel exports, computes the KPI package expect
 - Section 2-7 style workflow: ingest data, normalize daily metrics, calculate KPIs, create the strategy brief, and create the weekly content plan.
 - Section 8 stays manual: you still review/publish inside Instagram.
 - Sections 9-10 remain planning inputs: prompts and niche context live in `insta_review/prompts/` and `insta_review/context/`.
-- Section 11 support: generated files are saved in `outputs/` so you can inspect and iterate.
+- Section 11 support: a single `outputs/report.html` file is generated for review and sharing.
 - Section 12 review support: `--dry-run` lets you verify parsing and KPI math before using the API.
 
 ## Setup
 
 Requires Python 3.10+.
 
-No external dependencies — the parser reads `.xlsx` files using the Python standard library.
+No external dependencies - the parser reads `.xlsx` files using the Python standard library.
 
 For AI generation, copy `.env.example` to `.env` and replace the placeholder key, or set:
 
@@ -61,7 +61,7 @@ A manual workflow is available to generate reports without a local setup.
 
 ### One-Time Setup
 
-1. Go to your repo **Settings → Secrets and variables → Actions**.
+1. Go to your repo **Settings > Secrets and variables > Actions**.
 2. Add a secret named `GROQ_API_KEY` with your Groq API key.
 
 ### Running the Workflow
@@ -72,40 +72,46 @@ A manual workflow is available to generate reports without a local setup.
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `data_file` | No | *(auto-detect)* | Path to the `.xlsx` file in the repo, e.g. `data/insta monthly review.xlsx`. Leave blank to auto-pick the newest file in `data/`. |
+| `data_file` | Yes | `data/insta monthly review.xlsx` | Workbook to generate the report from. Add new choices in the workflow file when you add new `.xlsx` files. |
 | `model` | No | `llama-3.1-8b-instant` | Groq model to use. |
 | `dry_run` | No | `false` | Check to parse and compute KPIs only (skip Groq calls). |
 
-4. Once the run completes, download the generated reports from the **Artifacts** section at the bottom of the run page.
+4. Once the run completes, download `report.html` from the **Artifacts** section at the bottom of the run page.
 
 ### Adding New Data Files
 
-Drop new `.xlsx` exports into the `data/` directory, commit, and push. The workflow will auto-detect the newest file, or you can specify the exact path when triggering.
+Drop new `.xlsx` exports into the `data/` directory, commit, and push. Then add the new file path to the `data_file` choices in `.github/workflows/generate_report.yml`.
 
 ## Outputs
 
-- `outputs/daily_metrics.json`
-- `outputs/kpis.json`
-- `outputs/strategy_report.md`
-- `outputs/weekly_content_plan.md`
+- `outputs/report.html`
+
+The report has three tabs:
+
+- Dashboard: summary numbers, charts, and daily metrics.
+- Strategy: the strategist report in plain language.
+- Weekly Plan: the content plan for the next week.
+
+Use the export buttons in the report to save the current tab or the full report as a PDF.
 
 ## Project Structure
 
-```
+```text
 insta-growth-manager/
-├── .github/workflows/     # GitHub Actions CI workflow
-├── data/                  # Instagram monthly review .xlsx exports
-├── insta_review/
-│   ├── context/           # Niche context markdown
-│   ├── prompts/           # Strategist & content creator prompts
-│   ├── cli.py             # CLI argument parsing
-│   ├── kpis.py            # KPI calculations
-│   ├── llm.py             # Groq API client
-│   ├── models.py          # Data models (DailyMetric, KPIReport)
-│   ├── workflow.py        # End-to-end orchestration
-│   └── xlsx_reader.py     # .xlsx parser (stdlib only)
-├── outputs/               # Generated reports
-└── tests/                 # Unit tests
+|-- .github/workflows/     # GitHub Actions CI workflow
+|-- data/                  # Instagram monthly review .xlsx exports
+|-- insta_review/
+|   |-- context/           # Niche context markdown
+|   |-- prompts/           # Strategist and content creator prompts
+|   |-- cli.py             # CLI argument parsing
+|   |-- kpis.py            # KPI calculations
+|   |-- llm.py             # Groq API client
+|   |-- models.py          # Data models (DailyMetric, KPIReport)
+|   |-- report.py          # Static HTML report builder
+|   |-- workflow.py        # End-to-end orchestration
+|   `-- xlsx_reader.py     # .xlsx parser (stdlib only)
+|-- outputs/               # Generated report.html
+`-- tests/                 # Unit tests
 ```
 
 ## Notes

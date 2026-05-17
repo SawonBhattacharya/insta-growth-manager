@@ -34,5 +34,5 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Follow conversion: {kpis.follow_conversion_rate:.2%}")
     print(f"View/reach ratio: {kpis.view_to_reach_ratio:.2f}x")
     print(f"Dead days: {kpis.dead_days_count}")
-    print(f"Outputs written to: {Path(args.out_dir).resolve()}")
+    print(f"Report written to: {(Path(args.out_dir) / 'report.html').resolve()}")
     return 0
