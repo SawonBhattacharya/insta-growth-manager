@@ -2,7 +2,7 @@
 
 This codebase automates the analytics-to-content-planning workflow for `@sawon_chitrokotha`.
 
-It reads Instagram monthly review Excel exports, computes the KPI package expected by the strategist prompt, generates a strategist report, then feeds that report into the content creator prompt to produce a weekly content plan.
+It reads Instagram monthly review Excel exports, computes the KPI package expected by the strategist prompt, generates a strategist report, then feeds that report into the content creator prompt to produce a weekly content plan. The Streamlit app lets other creators upload their own analytics and describe their niche before generating the report.
 
 ## What It Automates
 
@@ -15,8 +15,6 @@ It reads Instagram monthly review Excel exports, computes the KPI package expect
 ## Setup
 
 Requires Python 3.10+.
-
-No external dependencies - the parser reads `.xlsx` files using the Python standard library.
 
 For AI generation, copy `.env.example` to `.env` and replace the placeholder key, or set:
 
@@ -54,6 +52,23 @@ Run the smoke tests:
 ```powershell
 python -m unittest discover -s tests
 ```
+
+## Streamlit App
+
+Run the local app:
+
+```powershell
+streamlit run streamlit_app.py
+```
+
+The app supports:
+
+- Excel upload.
+- Creator onboarding fields for niche, audience, goals, content style, capacity, and constraints.
+- Generic strategy and content prompts that adapt to the creator context.
+- A single downloadable `report.html` with dashboard, strategy, weekly plan, and PDF export buttons.
+
+For Streamlit Community Cloud, deploy `streamlit_app.py` from this repository and add `GROQ_API_KEY` as an app secret.
 
 ## GitHub Actions (CI)
 
@@ -104,13 +119,16 @@ insta-growth-manager/
 |   |-- context/           # Niche context markdown
 |   |-- prompts/           # Strategist and content creator prompts
 |   |-- cli.py             # CLI argument parsing
+|   |-- creator_profile.py # Account-specific context builder
 |   |-- kpis.py            # KPI calculations
 |   |-- llm.py             # Groq API client
 |   |-- models.py          # Data models (DailyMetric, KPIReport)
+|   |-- prompt_templates.py # Generic strategy and content prompts
 |   |-- report.py          # Static HTML report builder
 |   |-- workflow.py        # End-to-end orchestration
 |   `-- xlsx_reader.py     # .xlsx parser (stdlib only)
 |-- outputs/               # Generated report.html
+|-- streamlit_app.py       # Upload-and-generate web app
 `-- tests/                 # Unit tests
 ```
 

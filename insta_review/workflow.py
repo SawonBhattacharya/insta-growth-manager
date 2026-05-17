@@ -45,6 +45,37 @@ def run_workflow(
     strategist_prompt = Path(strategist_prompt_path).read_text(encoding="utf-8")
     content_prompt = Path(content_prompt_path).read_text(encoding="utf-8")
 
+    return run_custom_workflow(
+        excel_path=excel_path,
+        niche_context=niche_context,
+        strategist_prompt=strategist_prompt,
+        content_prompt=content_prompt,
+        out_dir=out_dir,
+        dry_run=False,
+        model=model,
+    )
+
+
+def run_custom_workflow(
+    excel_path: str | Path,
+    niche_context: str,
+    strategist_prompt: str,
+    content_prompt: str,
+    out_dir: str | Path,
+    dry_run: bool = False,
+    model: str | None = None,
+    report_title: str = "Instagram Growth Report",
+) -> tuple[list[DailyMetric], KPIReport]:
+    out_path = Path(out_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    metrics = read_daily_metrics(excel_path)
+    kpis = calculate_kpis(metrics)
+
+    if dry_run:
+        write_html_report(out_path / "report.html", metrics, kpis, title=report_title)
+        return metrics, kpis
+
     client = GroqClient(model=model)
     strategy_report = client.complete(
         strategist_prompt,
@@ -63,7 +94,14 @@ def run_workflow(
             "week": _next_week_label(kpis.period_end),
         },
     )
-    write_html_report(out_path / "report.html", metrics, kpis, strategy_report, content_plan)
+    write_html_report(
+        out_path / "report.html",
+        metrics,
+        kpis,
+        strategy_report,
+        content_plan,
+        title=report_title,
+    )
 
     return metrics, kpis
 
