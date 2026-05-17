@@ -39,6 +39,40 @@ def main() -> None:
         st.divider()
         st.markdown("The final download is a single HTML report with built-in PDF export buttons.")
 
+    with st.expander("How to download and prepare your Instagram data", expanded=True):
+        st.markdown(
+            """
+            Use Meta Business Suite to export your Instagram insights, then combine the exports into one Excel workbook before uploading.
+
+            **Step 1: Open Meta Business Suite**
+
+            1. Go to [business.facebook.com](https://business.facebook.com/).
+            2. Log in with the Facebook or Instagram account that manages the Instagram page.
+            3. Select the Instagram account you want to analyze.
+
+            **Step 2: Download the insight files**
+
+            1. Open **Insights** or **Analytics**.
+            2. Choose the date range you want to review, such as the last 28 or 30 days.
+            3. Export the daily numbers for these metrics:
+               - Views
+               - Reach
+               - Content interactions
+               - Instagram profile visits
+               - Instagram follows
+
+            **Step 3: Combine them into one Excel file**
+
+            1. Create one `.xlsx` workbook.
+            2. Add each exported metric as a separate sheet.
+            3. Name the sheets clearly, for example: `Views`, `reach`, `interaction`, `visit`, and `follow`.
+            4. Each sheet should have a `Date` column and a daily value column.
+            5. Save the workbook, then upload it below.
+
+            If your export uses slightly different names, keep the meaning the same. The app currently reads views, reach, interactions, profile visits, and follows.
+            """
+        )
+
     uploaded_file = st.file_uploader(
         "Upload Instagram monthly review Excel file",
         type=["xlsx"],
