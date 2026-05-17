@@ -1,76 +1,83 @@
 ## Weekly content plan
 
-**Period:** Week of 15 May–21 May 2026
-**Priority from strategy report:** Follow conversion rate is critically low, requiring content that resonates with a specific segment of the audience to encourage followership.
+**Period:** Week of 15–21 May 2026
+**Priority from strategy report:** Address the extremely low conversion of profile visits to follows, indicating a significant issue with profile visibility or content appeal.
 
 ---
 
 ### Reel ideas
 
-At least 2 of the 4 reels must come from Pillar 1 (Rules of the Roof) or Pillar 2 (That one player every para had) to address the low follow conversion rate by engaging the audience with relatable, specific cricket nostalgia.
+At least 2 of the 4 reels must come from Pillars 1 (Rules of the Roof) and 2 (That one player every para had) to address the low engagement rate.
 
 ---
 
 **Reel 1**
-- Title: "The boy who owned the ball"
+- Title: The Boy Who Owned the Ball Always Batted at Number 1
 - Pillar: That one player every para had
-- Hook (0–1.5 sec): "I still remember the kid who always got to bat at number 1, every game."
-- Core (2–20 sec): This reel showcases kids from different parapets (or buildings) sharing their experiences of having a designated "star player" who always batted first.
-- End beat: Tell me the name of the star player from your para.
-- Thumbnail: A close-up of a small boy, eyes fixed on a cricket ball, with a faint chalk line visible behind him on a rough concrete surface.
-- Caption: "I still remember the kid who always got to bat at number 1, every game. Tell me the name of the star player from your para."
+- Hook (0–1.5 sec): "In my para, it was always the boy who had the fancy bat who batted at number 1"
+- Core (2–20 sec): This reel showcases a montage of kids playing cricket on a rooftop, with the boy with the fancy bat taking his place at the top of the batting order, and the other kids cheering him on.
+- End beat: "Tell me, who was the guy with the fancy bat in your para?"
+- Thumbnail: Close-up of a kid holding a cricket bat, with a hint of a rooftop in the background, warm sunlight.
+- Caption: "The boy with the fancy bat was always the boss in my para. Who was yours?"
 
 ---
 
 **Reel 2**
-- Title: "Only the para's rules counted"
+- Title: The Rule of the Broken Wicket
 - Pillar: Rules of the Roof
-- Hook (0–1.5 sec): "Remember when you could get out for 'foul language', but not for hitting the ball out of bounds?"
-- Core (2–20 sec): This reel highlights the unique rules that every group of rooftop cricketers had, which often made no sense to outsiders but were sacred to the group.
-- End beat: Share a rule that was specific to your group, and tag a friend who'll understand it.
-- Thumbnail: A group of kids in the middle of a heated game, with one kid pointing towards the para's rules chalked on the wall.
-- Caption: "Remember when you could get out for 'foul language', but not for hitting the ball out of bounds? Share a rule that was specific to your group, and tag a friend who'll understand it."
+- Hook (0–1.5 sec): "You know the rule, right? If the wicket breaks, the game goes on, but..."
+- Core (2–20 sec): This reel showcases a group of kids playing cricket on a rooftop, with a wicket breaking, and the kids arguing over whether to continue the game or not.
+- End beat: "Tag the person who always made the wrong call"
+- Thumbnail: Close-up of a kid holding a broken wicket, with a group of kids surrounding him, arguing.
+- Caption: "The rule of the broken wicket was always a debate in my lane. Who was the person who always made the wrong call?"
 
 ---
 
 **Reel 3**
-- Title: "Cricket's unofficial umpires"
+- Title: The One-Over Rule for Para Cricket
 - Pillar: Rules of the Roof
-- Hook (0–1.5 sec): "Who was the unofficial umpire in your para, and what was their most ridiculous call?"
-- Core (2–20 sec): This reel showcases kids sharing stories of the unofficial umpires in their parapets, who often made outrageous calls that became legendary in the group.
-- End beat: Share a story of an unofficial umpire from your para, and tag a friend who can relate.
-- Thumbnail: A close-up of a kid arguing with an older kid who's acting as the unofficial umpire.
-- Caption: "Who was the unofficial umpire in your para, and what was their most ridiculous call? Share a story of an unofficial umpire from your para, and tag a friend who can relate."
+- Hook (0–1.5 sec): "In my para, if someone got out, the match was over, but if it was a one-over match..."
+- Core (2–20 sec): This reel showcases a group of kids playing a one-over match, with one kid getting out, but the game continuing because it was a one-over match.
+- End beat: "Every para had its own twist on the one-over rule. Share yours!"
+- Thumbnail: Close-up of a kid hitting a ball, with a group of kids in the background, cheering.
+- Caption: "The one-over rule was always a topic of discussion in my para. What was the twist in your para?"
 
 ---
 
 **Reel 4**
-- Title: "The para's cricket anthem"
-- Pillar: Shared Practices
-- Hook (0–1.5 sec): "What song did your para play when you scored a century?"
-- Core (2–20 sec): This reel showcases kids sharing the songs that were played when they scored a century or achieved other milestones in their games.
-- End beat: Share the song that was played in your para when you scored a century, and tag a friend who can sing along.
-- Thumbnail: A group of kids dancing and cheering to a song, with one kid holding a cricket bat.
-- Caption: "What song did your para play when you scored a century? Share the song that was played in your para when you scored a century, and tag a friend who can sing along."
+- Title: The Kid Who Always Got to Bat First
+- Pillar: That one player every para had
+- Hook (0–1.5 sec): "In my para, it was always the kid who lived in the building next door who got to bat first"
+- Core (2–20 sec): This reel showcases a group of kids playing cricket on a rooftop, with the kid who lived in the building next door taking his place at the top of the batting order, and the other kids cheering him on.
+- End beat: "Tell me, who was the kid who always got to bat first in your para?"
+- Thumbnail: Close-up of a kid holding a cricket bat, with a hint of a rooftop in the background, warm sunlight.
+- Caption: "The kid who lived next door was always the luckiest in my para. Who was yours?"
 
 ---
 
 ### Story ideas
 
-Stories run on non-reel days (today, Wednesday, Thursday) to maintain daily algorithm presence.
+Stories run on non-reel days (Monday, Wednesday, Thursday) to maintain daily algorithm presence.
 
 ---
 
 **Story 1**
-- Format: Reaction slider
+- Format: Poll
 - Post day: Monday
-- Prompt text: "Did you have an unofficial umpire in your para? Swipe right to share a story."
-- Why this week: This story is relevant to the current week's content as it extends the conversation started by Reel 3, "Cricket's unofficial umpires."
+- Prompt text: "What was the most ridiculous rule in your para? A) The boy who owned the ball always batted at number 1 B) The one-over match had to be played with a different ball C) If the wicket broke, the game went on, but... D) Other (share in comments)"
+- Why this week: This story is designed to engage the audience by asking them to share their own experiences and rules from their para.
 
 ---
 
 **Story 2**
-- Format: Poll
+- Format: Question sticker
 - Post day: Wednesday
-- Prompt text: "What's the most ridiculous rule you remember from your para? A) You could get out for 'foul language', B) You had to bat with your eyes closed, or C) You had to hit the ball with your non-dominant hand?"
-- Why this week: This story is relevant to the current week's content
+- Prompt text: "What's the one thing you still remember about para cricket? (share in comments)"
+- Why this week: This story is designed to spark a conversation and encourage audience engagement by asking them to share their memories.
+
+---
+
+**Story 3**
+- Format: Reaction slider
+- Post day: Thursday
+- Prompt text: "How often did

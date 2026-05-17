@@ -78,4 +78,4 @@ def _write_json(path: Path, payload: object) -> None:
 def _next_week_label(period_end: date) -> str:
     start = period_end + timedelta(days=1)
     end = start + timedelta(days=6)
-    return f"Week of {start.strftime('%d %b')}–{end.strftime('%d %b %Y')}"
+    return f"Week of {start.strftime('%d %b')} - {end.strftime('%d %b %Y')}"
