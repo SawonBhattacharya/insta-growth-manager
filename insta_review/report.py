@@ -16,10 +16,11 @@ def write_html_report(
     kpis: KPIReport,
     strategy_report: str | None = None,
     content_plan: str | None = None,
+    title: str = "Instagram Growth Report",
 ) -> None:
     report_path = Path(path)
     report_path.write_text(
-        build_html_report(metrics, kpis, strategy_report, content_plan),
+        build_html_report(metrics, kpis, strategy_report, content_plan, title=title),
         encoding="utf-8",
     )
 
@@ -29,6 +30,7 @@ def build_html_report(
     kpis: KPIReport,
     strategy_report: str | None = None,
     content_plan: str | None = None,
+    title: str = "Instagram Growth Report",
 ) -> str:
     metrics_json = [day.to_json() for day in metrics]
     kpis_json = kpis.to_json()
@@ -54,7 +56,7 @@ def build_html_report(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Instagram Growth Report</title>
+  <title>{html.escape(title)}</title>
   <style>
     :root {{
       --bg: #f7f8fb;
@@ -342,7 +344,7 @@ def build_html_report(
   <header>
     <div class="header-inner">
       <div>
-        <h1>Instagram Growth Report</h1>
+        <h1>{html.escape(title)}</h1>
         <p class="subtitle">Reporting period: {html.escape(period)}. Generated {html.escape(generated_at)}.</p>
       </div>
       <div class="actions" aria-label="Export options">
