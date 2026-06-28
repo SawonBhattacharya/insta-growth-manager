@@ -1,0 +1,114 @@
+{
+  "theme_and_archetype": {
+    "theme": "LIGHT",
+    "archetype": "Archetype 4 (Swiss & High-Contrast)",
+    "rationale": "Creators need clarity and authority. Moving away from generic 'pastel creator tools' or 'dark mode AI slop', we use a stark, editorial Swiss aesthetic to position this as a high-end 'Growth Agency in your browser'.",
+    "vibe": "Premium, editorial, smart, objective, function-first, energetic."
+  },
+  "typography": {
+    "pairing_strategy": "The Swiss Brutalist (Tech / Art)",
+    "heading_font": "Outfit",
+    "body_font": "Manrope",
+    "mono_font": "JetBrains Mono",
+    "scale_hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-7xl tracking-tighter font-black",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl tracking-tight font-bold",
+      "h4": "text-lg sm:text-xl tracking-tight font-semibold",
+      "body": "text-base leading-relaxed font-medium",
+      "overline": "text-xs font-mono uppercase tracking-[0.2em] font-bold"
+    }
+  },
+  "color_palette": {
+    "background": {
+      "primary": "#F4F4F0",
+      "secondary": "#FFFFFF",
+      "tertiary": "#EAEAEA"
+    },
+    "text": {
+      "primary": "#0A0A0A",
+      "secondary": "#4A4A4A",
+      "tertiary": "#8A8A8A",
+      "inverse": "#FFFFFF"
+    },
+    "accent": {
+      "primary": "#FF3B00",
+      "secondary": "#0033FF",
+      "warning": "#FFC000"
+    },
+    "borders": {
+      "default": "#0A0A0A",
+      "light": "#D4D4D0"
+    },
+    "rules": [
+      "No gradients. 100% of UI is stark solid colors.",
+      "Accent colors (#FF3B00 - Signal Red and #0033FF - Klein Blue) are used strictly for function: primary actions, active states, or highlighting critical insights.",
+      "The 'Tinted Grey' Rule: Blacks are slightly warm (#0A0A0A) to match the off-white paper-like background (#F4F4F0)."
+    ]
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous Spacing + Strict Asymmetry.",
+    "container_padding": "p-6 sm:p-8 lg:p-12",
+    "bento_grid": {
+      "marketing": "grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-8 md:gap-12",
+      "dashboard": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+      "rules": "Avoid perfect symmetry. In dashboards, mix 1x1 summary squares with 2x2 deep-dive charts."
+    },
+    "alignment": "Strict left-alignment for all data, tables, and paragraphs."
+  },
+  "surface_strategies": {
+    "dashboard_cards": "Flat solid background (bg-white), 2px solid border (border-black). No soft shadows. On hover: hard solid shadow (shadow-[4px_4px_0px_0px_rgba(10,10,10,1)]) and -translate-y-1 transition.",
+    "headers": "Solid background with a hard 2px black bottom border. No glassmorphism.",
+    "agent_terminal": "Retro-Futurism style specifically for the multi-agent execution view. Deep black background (#0A0A0A), mono font, neon blue (#0033FF) or white text for log outputs."
+  },
+  "component_customization": {
+    "buttons": {
+      "primary": "bg-[#FF3B00] text-white rounded-none font-bold tracking-wide uppercase px-6 py-3 hover:bg-[#CC2F00] transition-colors border-2 border-[#FF3B00]",
+      "secondary": "bg-transparent text-[#0A0A0A] border-2 border-[#0A0A0A] rounded-none font-bold tracking-wide uppercase px-6 py-3 hover:bg-[#0A0A0A] hover:text-white transition-colors"
+    },
+    "inputs_and_forms": "Shadcn components with rounded-none. 2px solid black border. Focus ring: 2px solid #0033FF (Klein Blue).",
+    "tables": "Dense, clean. Bottom borders only (border-b-2 border-black/10) for rows. Bold table headers.",
+    "charts": "Recharts. Remove all grid lines. Use thick lines (strokeWidth={3}) or solid bars. Colors: Solid Black, Signal Red, and Klein Blue. Use custom Tooltip with hard black borders."
+  },
+  "motion_and_interaction": {
+    "hover_states": "Hard crisp transitions, no soft easing. Use hover:translate-x-1 or hover:-translate-y-1 with solid drop shadows.",
+    "agent_workflow": "Sequential text typing effect for agent logs. Staggered fade-ins for chart widgets using framer-motion.",
+    "page_transitions": "Instant or very fast fade (0.15s)."
+  },
+  "iconography": {
+    "library": "lucide-react",
+    "styling": "Stroke width 2. No fill. Sharp, scalable. Keep them monochrome."
+  },
+  "media_assets": {
+    "hero_image": {
+      "url": "https://images.unsplash.com/photo-1637603460405-3c86307993aa?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTN8MHwxfHNlYXJjaHw0fHx5b3VuZyUyMGNvbnRlbnQlMjBjcmVhdG9yJTIwc2V0dXB8ZW58MHx8fHwxNzgyNjEzMjI2fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Creator at a desk setup, used in the hero landing section. Apply grayscale or high contrast overlay to fit the Brutalist theme."
+    },
+    "editorial_texture": {
+      "url": "https://images.unsplash.com/photo-1549298222-1c31e8915347?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njd8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjBlZGl0b3JpYWwlMjBmYXNoaW9uJTIwbWFnYXppbmUlMjBsYXlvdXQlMjB0ZW1wbGF0ZXxlbnwwfHx8fDE3ODI2MTMyMjZ8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Editorial magazine layout used for background texture in the Growth Report cover or empty states."
+    },
+    "platform_logos_reference": {
+      "url": "https://images.unsplash.com/photo-1683721003111-070bcc053d8b?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwxfHxzb2NpYWwlMjBtZWRpYSUyMHBsYXRmb3JtJTIwYXBwJTIwbG9nb3xlbnwwfHx8fDE3ODI2MTMyMjZ8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Collage of social media apps. Can be used in the 'Connect Platforms' hero or empty state."
+    }
+  },
+  "key_views": {
+    "landing_page": "Massive H1. Asymmetric grid layout. A large 'Start Analysis' CTA. A marquee banner showcasing platforms moving slowly.",
+    "dashboard_home": "Bento grid of connected platforms. Clean cards. A massive 'Upload CSV/PDF' drag-and-drop zone acting as the primary action area.",
+    "agent_execution": "A terminal-like console window overlay. As the multi-agent system runs (Audience Analyst -> Content Strategist -> Engagement Coach -> Competitor Insight -> Action Planner), print out monospace logs dynamically to build trust and show the 'AI thinking'.",
+    "growth_report": "Progressive disclosure layout. Start with ONE massive North Star metric. Below it, a clean Recharts graph. Use Tabs to switch between Platforms.",
+    "action_plan": "A 'To-Do' list aesthetic. Weekly/Monthly tasks with checkboxes. High-contrast labels (e.g., [URGENT], [CONTENT IDEA]) in mono font."
+  },
+  "instructions_to_main_agent": [
+    "Import Outfit and Manrope from Google Fonts in index.css.",
+    "Configure Tailwind with the provided color palette (background.primary as main bg, etc.).",
+    "Use pure HTML+Tailwind for the landing page layout, strictly applying the Bento Grid.",
+    "Use Shadcn UI for the dashboard components, but override rounded corners to 'rounded-none' and add 'border-2 border-[#0A0A0A]'.",
+    "Implement the Multi-Agent Execution View using a mock terminal that loops through agent states (Analyst, Strategist, etc.) and prints monospace logs to simulate processing.",
+    "Ensure all interactive elements have 'data-testid' attributes (e.g., data-testid='upload-csv-button').",
+    "Use Recharts for Growth Report charts. Remove CartisianGrid or make it invisible. Use strokeWidth={3} for lines.",
+    "Do NOT use gradients. Stick to solid colors.",
+    "All cards must have a 2px solid black border and hard shadow on hover (e.g., hover:shadow-[4px_4px_0px_0px_#0A0A0A])."
+  ]
+}
