@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { UploadCloud, FileText, Trash2, Play, ArrowRight, Instagram, Twitter, Linkedin, Youtube, Music2, X, BookOpen } from "lucide-react";
 import ExportGuide from "@/components/ExportGuide";
 import ChatPanel from "@/components/ChatPanel";
+import MarketIntel from "@/components/MarketIntel";
+import ConnectPlatforms from "@/components/ConnectPlatforms";
 
 const PLATFORMS = [
   { key: "instagram", label: "Instagram", icon: Instagram, accent: "#E1306C" },
@@ -250,6 +252,14 @@ export default function ProjectDetail() {
               )}
             </div>
           </aside>
+        </div>
+
+        <div className="mt-8">
+          <ConnectPlatforms />
+        </div>
+
+        <div className="mt-8">
+          <MarketIntel projectId={projectId} />
         </div>
 
         {reports.some(r => r.status === "complete") && (

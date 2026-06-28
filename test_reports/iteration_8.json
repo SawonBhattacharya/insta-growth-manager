@@ -1,0 +1,34 @@
+{
+  "summary": "Phase 2.2 Market Intel + Connect-Platforms stub tested. Backend POST /api/projects/{id}/market-intel returns enriched JSON with trend_scout/niche_benchmarker/audience_behavior/_source/_refreshed_at keys and persists to db.market_intel (one LLM call, ~28s; _source='placeholder + LLM enrichment (live APIs coming soon)'). GET returns the saved doc (then {} after delete, then the second refresh). 401 enforced on both routes without auth. Analyze endpoint accepts POST (still returns 400 'Upload at least one platform export first' due to no uploads in db — same env state as iter7; endpoint structure unchanged). Frontend ProjectDetail (/projects/proj_d4ba8d647a10): market-intel-panel + connect-platforms both visible; all 5 connect-{instagram,youtube,linkedin,twitter,tiktok} buttons render; clicking connect-instagram fires sonner toast 'Instagram live-connect is coming soon — for now, upload exports above.' with no URL change/crash. With intel cleared, first-refresh-market-intel rendered; clicking it produced populated trend-scout (1126 chars, fitness topics + IG/YT/TikTok platform tags + #GymTok hashtag), niche-benchmarker (768 chars, 4.2% median ER + top 68th percentile + creator tactics), audience-behavior (662 chars, recurring questions + content requests). refresh-market-intel button visible post-refresh. chat-panel still renders alongside (regression OK).",
+  "tested_scope": ["backend", "frontend", "integration", "auth"],
+  "passed": [
+    "POST /api/projects/{id}/market-intel 200 with all 5 required keys (trend_scout, niche_benchmarker, audience_behavior, _source, _refreshed_at)",
+    "Market intel persisted to db.market_intel (verified via mongosh)",
+    "GET /api/projects/{id}/market-intel returns {} when none, returns saved intel after refresh",
+    "GET + POST market-intel return 401 without auth",
+    "POST /api/projects/{id}/analyze endpoint still reachable (returns expected 400 due to no uploads — env state)",
+    "Frontend market-intel-panel testid visible on ProjectDetail",
+    "first-refresh-market-intel renders when no intel; clicking populates the 3 sub-blocks",
+    "trend-scout, niche-benchmarker, audience-behavior testid blocks all render with non-trivial LLM-enriched content",
+    "refresh-market-intel button visible after data exists",
+    "connect-platforms testid visible with all 5 connect-{instagram,youtube,linkedin,twitter,tiktok} buttons",
+    "Clicking connect-instagram fires 'coming soon' toast with no navigation/crash",
+    "Regression: chat-panel still renders on ProjectDetail"
+  ],
+  "failed": [
+    {
+      "area": "Backend analyze() market_intel merge",
+      "issue": "Review request states 'analyze() now folds market_intel into profile_ctx', but grep on /app/backend/server.py shows NO reference to market_intel/db.market_intel anywhere inside the analyze() function (lines 464-540). Only feedback is merged into profile_ctx (lines 491-500). market_intel is only read/written by the new market-intel endpoints (lines 848-900). Could not exercise the merged-prompt path live anyway (no uploads), but the source code does not implement the documented integration.",
+      "evidence": "grep -n 'market' /app/backend/server.py -> only matches in market-intel endpoints (lines 848-896); analyze() body (lines 487-500) builds profile_ctx from _profile_context(proj) + feedback_ctx only.",
+      "priority": "MEDIUM"
+    }
+  ],
+  "action_items": [
+    "Wire db.market_intel.find_one({project_id, user_id}) into analyze() and append a summarized block to profile_ctx (similar to feedback_ctx pattern) so future reports actually use the scouted intel as advertised in the PRD."
+  ],
+  "success_rate": {"backend": "95% (all 3 market-intel endpoints + auth pass; analyze-merge code path not implemented per source grep)", "frontend": "100%"},
+  "retest_needed": true,
+  "full_testing_deferred": true,
+  "test_credentials": "Reused session test_session_iter5_1782616277466 for user_f4640efc606a; project proj_d4ba8d647a10.",
+  "notes": "Burned 2 LLM refreshes total (1 backend curl + 1 frontend first-refresh click) per the 1-2 budget. Final market_intel doc remains in DB for proj_d4ba8d647a10."
+}

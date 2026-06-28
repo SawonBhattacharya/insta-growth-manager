@@ -830,6 +830,75 @@ async def get_feedback(report_id: str, user: User = Depends(get_current_user)):
     return {it["item_key"]: it for it in items}
 
 
+# ---------------- Market Intel ----------------
+NICHE_SKELETON = {
+    "trending_formats": ["short-form documentary reels", "behind-the-scenes vlogs", "carousel breakdowns", "POV transitions", "before/after splits"],
+    "trending_hooks": ["What nobody tells you about…", "I tried X for 30 days…", "3 mistakes that cost me…", "The brutal truth about…"],
+    "benchmarks": {
+        "instagram": {"engagement_rate_median": "3.8%", "reels_views_to_follower_ratio": "1.2x", "ideal_post_frequency": "4–6 / week"},
+        "youtube":   {"avg_view_duration_median": "42%", "ctr_median": "5.1%", "ideal_upload_frequency": "1–2 / week"},
+        "tiktok":    {"engagement_rate_median": "5.7%", "completion_rate_median": "38%", "ideal_post_frequency": "1 / day"},
+        "twitter":   {"engagement_rate_median": "1.1%", "ideal_post_frequency": "2–4 / day"},
+        "linkedin":  {"engagement_rate_median": "2.3%", "ideal_post_frequency": "3–5 / week"},
+    },
+    "rising_topics_seed": ["faceless creator economy", "community-first content", "creator-led product launches"],
+}
+
+
+@api_router.post("/projects/{project_id}/market-intel")
+async def refresh_market_intel(project_id: str, user: User = Depends(get_current_user)):
+    proj = await db.projects.find_one({"project_id": project_id, "user_id": user.user_id}, {"_id": 0})
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    sys = (
+        "You are the Market Intel team — Trend Scout, Niche Benchmarker, and Audience Behavior agents. "
+        "Given the brand's niche and audience, enrich the provided skeleton with realistic, plausible market signals. "
+        "Be specific to the niche. Return STRICT JSON with this shape:\n"
+        "{\n"
+        '  "trend_scout": {"trending_topics": [{"topic": "string", "why_now": "string", "platform": "string"}, ...5 items], "trending_audio_or_hashtags": ["string", ...5 items]},\n'
+        '  "niche_benchmarker": {"niche": "string", "follower_band": "string", "median_engagement_rate": "string", "ranking_estimate": "string (e.g., \\"73rd percentile\\")", "what_top_creators_do_differently": ["string", ...4 items]},\n'
+        '  "audience_behavior": {"recurring_questions": ["string", ...4 items], "objections": ["string", ...3 items], "content_requests": ["string", ...3 items]}\n'
+        "}\n"
+        "Mark this as PLACEHOLDER market data (we'll wire live APIs later) but make it useful and niche-specific. Respond ONLY with JSON."
+    )
+    user_prompt = (
+        f"BRAND:\n{_profile_context(proj)}\n\nSKELETON:\n{json.dumps(NICHE_SKELETON)}"
+    )
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"mi_{project_id}_{uuid.uuid4().hex[:6]}",
+            system_message=sys,
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        resp = await chat.send_message(UserMessage(text=user_prompt))
+        raw = resp if isinstance(resp, str) else str(resp)
+        stripped = raw.strip().strip("`")
+        if stripped.lower().startswith("json"):
+            stripped = stripped[4:].strip()
+        start, end = stripped.find("{"), stripped.rfind("}")
+        intel = json.loads(stripped[start:end+1]) if start >= 0 and end > start else {"raw": raw}
+    except Exception as e:
+        intel = {"error": str(e), "raw_skeleton": NICHE_SKELETON}
+
+    intel["_source"] = "placeholder + LLM enrichment (live APIs coming soon)"
+    intel["_refreshed_at"] = datetime.now(timezone.utc).isoformat()
+    await db.market_intel.update_one(
+        {"project_id": project_id, "user_id": user.user_id},
+        {"$set": {"intel": intel, "updated_at": intel["_refreshed_at"]}},
+        upsert=True,
+    )
+    return intel
+
+
+@api_router.get("/projects/{project_id}/market-intel")
+async def get_market_intel(project_id: str, user: User = Depends(get_current_user)):
+    doc = await db.market_intel.find_one(
+        {"project_id": project_id, "user_id": user.user_id}, {"_id": 0}
+    )
+    return doc.get("intel") if doc else {}
+
+
 @api_router.get("/")
 async def root():
     return {"app": "pulse", "ok": True}
