@@ -224,7 +224,7 @@ export default function Report() {
 
         {/* COVER */}
         <section className="mt-8 border-2 border-[#0A0A0A] bg-white p-8 sm:p-12">
-          <div className="overline text-[#FF3B00] mb-3">Pulse Growth Report №{reportId.slice(-4).toUpperCase()}</div>
+          <div className="overline text-[#FF3B00] mb-3">Pulse Growth Report №{(reportId || token || "").slice(-4).toUpperCase()}</div>
           <h1 className="font-display font-black text-4xl sm:text-6xl lg:text-7xl tracking-tighter leading-[0.95]">
             {plan?.north_star?.metric || "Your growth, decoded."}
           </h1>
