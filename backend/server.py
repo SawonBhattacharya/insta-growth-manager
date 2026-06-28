@@ -584,6 +584,82 @@ async def list_reports(project_id: str, user: User = Depends(get_current_user)):
     return await cursor.to_list(50)
 
 
+# ---------------- Share links ----------------
+@api_router.post("/reports/{report_id}/share")
+async def create_share(report_id: str, request: Request, user: User = Depends(get_current_user)):
+    rpt = await db.reports.find_one({"report_id": report_id, "user_id": user.user_id}, {"_id": 0})
+    if not rpt:
+        raise HTTPException(status_code=404, detail="Report not found")
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    expires_in_days = int(body.get("expires_in_days") or 0)
+    token = uuid.uuid4().hex[:20]
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=expires_in_days)).isoformat() if expires_in_days > 0 else None
+    await db.report_shares.delete_many({"report_id": report_id})
+    await db.report_shares.insert_one({
+        "share_token": token,
+        "report_id": report_id,
+        "project_id": rpt["project_id"],
+        "user_id": user.user_id,
+        "expires_at": expires_at,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"share_token": token, "expires_at": expires_at}
+
+
+@api_router.get("/reports/{report_id}/share")
+async def get_share(report_id: str, user: User = Depends(get_current_user)):
+    s = await db.report_shares.find_one({"report_id": report_id, "user_id": user.user_id}, {"_id": 0})
+    return s or {}
+
+
+@api_router.delete("/reports/{report_id}/share")
+async def delete_share(report_id: str, user: User = Depends(get_current_user)):
+    await db.report_shares.delete_many({"report_id": report_id, "user_id": user.user_id})
+    return {"ok": True}
+
+
+@api_router.get("/public/share/{token}")
+async def public_share(token: str):
+    share = await db.report_shares.find_one({"share_token": token}, {"_id": 0})
+    if not share:
+        raise HTTPException(status_code=404, detail="Invalid or expired link")
+    if share.get("expires_at"):
+        exp = datetime.fromisoformat(share["expires_at"])
+        if exp.tzinfo is None:
+            exp = exp.replace(tzinfo=timezone.utc)
+        if exp < datetime.now(timezone.utc):
+            raise HTTPException(status_code=410, detail="Link expired")
+    rpt = await db.reports.find_one({"report_id": share["report_id"]}, {"_id": 0, "logs": 0})
+    if not rpt:
+        raise HTTPException(status_code=404, detail="Report missing")
+    proj = await db.projects.find_one({"project_id": share["project_id"]}, {"_id": 0})
+    # charts
+    uploads = await db.uploads.find({"project_id": share["project_id"]}, {"_id": 0}).to_list(100)
+    platforms = {}
+    for u in uploads:
+        plat = u["platform"]
+        parsed = u.get("parsed", {})
+        platforms.setdefault(plat, {"timeseries": [], "metrics": {}, "files": []})
+        platforms[plat]["files"].append(u.get("filename"))
+        sheets_iter = parsed.get("sheets", {}).items() if "sheets" in parsed else [(u.get("filename","data"), parsed)]
+        for sn, s in sheets_iter:
+            for k, v in (s.get("numeric_summary") or {}).items():
+                key = f"{sn}:{k}" if "sheets" in parsed else k
+                platforms[plat]["metrics"][key] = v
+            if s.get("timeseries"):
+                platforms[plat]["timeseries"].extend(s["timeseries"])
+    return {
+        "report": rpt,
+        "project": {"account_name": proj.get("account_name"), "niche": proj.get("niche")} if proj else {},
+        "charts": {"platforms": platforms},
+        "expires_at": share.get("expires_at"),
+    }
+
+
 @api_router.get("/projects/{project_id}/charts")
 async def project_charts(project_id: str, user: User = Depends(get_current_user)):
     """Aggregate uploaded data into chart-ready series."""
