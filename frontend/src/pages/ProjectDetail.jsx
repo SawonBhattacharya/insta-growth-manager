@@ -4,7 +4,8 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import { API } from "@/App";
 import { toast } from "sonner";
-import { UploadCloud, FileText, Trash2, Play, ArrowRight, Instagram, Twitter, Linkedin, Youtube, Music2, X } from "lucide-react";
+import { UploadCloud, FileText, Trash2, Play, ArrowRight, Instagram, Twitter, Linkedin, Youtube, Music2, X, BookOpen } from "lucide-react";
+import ExportGuide from "@/components/ExportGuide";
 
 const PLATFORMS = [
   { key: "instagram", label: "Instagram", icon: Instagram, accent: "#E1306C" },
@@ -110,7 +111,10 @@ export default function ProjectDetail() {
           {/* LEFT: upload */}
           <section className="lg:col-span-7 space-y-6">
             <div className="brutal-card p-6">
-              <div className="overline text-[#0033FF] mb-4">// step 01 · choose platform</div>
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+                <div className="overline text-[#0033FF]">// step 01 · choose platform</div>
+                <ExportGuide platform={selectedPlatform} />
+              </div>
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 {PLATFORMS.map((p) => {
                   const Icon = p.icon;

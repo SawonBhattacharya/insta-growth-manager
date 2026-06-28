@@ -115,6 +115,7 @@ function AppRouter() {
       <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
       <Route path="/projects/:projectId/analyze/:reportId" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
       <Route path="/reports/:reportId" element={<ProtectedRoute><Report /></ProtectedRoute>} />
+      <Route path="/share/:token" element={<Report />} />
     </Routes>
   );
 }

@@ -4,8 +4,10 @@ import { useParams, Link } from "react-router-dom";
 import TopBar from "@/components/TopBar";
 import { API } from "@/App";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Download, Printer, ArrowLeft, Target, ListChecks, CalendarDays, Lightbulb, AlertTriangle } from "lucide-react";
+import { Download, Printer, ArrowLeft, Target, ListChecks, CalendarDays, Lightbulb, AlertTriangle, Share2, Copy, Trash2, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
 
 function MD({ text }) {
   if (!text) return null;
@@ -34,20 +36,39 @@ function MD({ text }) {
 }
 
 export default function Report() {
-  const { reportId } = useParams();
+  const { reportId, token } = useParams();
+  const isPublic = !!token;
   const [report, setReport] = useState(null);
   const [charts, setCharts] = useState(null);
+  const [projectName, setProjectName] = useState("");
+  const [shareInfo, setShareInfo] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
+      if (isPublic) {
+        try {
+          const r = await axios.get(`${API}/public/share/${token}`);
+          setReport(r.data.report);
+          setCharts(r.data.charts);
+          setProjectName(r.data.project?.account_name || "");
+        } catch (e) {
+          setReport({ status: "missing", error: e.response?.data?.detail || "Link unavailable" });
+        }
+        return;
+      }
       const r = await axios.get(`${API}/reports/${reportId}`);
       setReport(r.data);
       try {
         const c = await axios.get(`${API}/projects/${r.data.project_id}/charts`);
         setCharts(c.data);
       } catch {}
+      try {
+        const s = await axios.get(`${API}/reports/${reportId}/share`);
+        if (s.data?.share_token) setShareInfo(s.data);
+      } catch {}
     })();
-  }, [reportId]);
+  }, [reportId, token, isPublic]);
 
   const plan = report?.final_plan;
   const platforms = Object.keys(charts?.platforms || {});
@@ -56,14 +77,52 @@ export default function Report() {
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `pulse-report-${reportId}.json`; a.click();
+    a.href = url; a.download = `pulse-report-${(reportId||token)}.json`; a.click();
     URL.revokeObjectURL(url);
   };
 
   const printReport = () => window.print();
 
+  const createShare = async (days) => {
+    try {
+      const r = await axios.post(`${API}/reports/${reportId}/share`, { expires_in_days: days });
+      setShareInfo(r.data);
+      toast.success("Share link created");
+    } catch {
+      toast.error("Could not create share link");
+    }
+  };
+
+  const revokeShare = async () => {
+    await axios.delete(`${API}/reports/${reportId}/share`);
+    setShareInfo(null);
+    toast.success("Link revoked");
+  };
+
+  const shareUrl = shareInfo?.share_token ? `${window.location.origin}/share/${shareInfo.share_token}` : "";
+
+  const copyShare = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied");
+    } catch {
+      toast.error("Could not copy");
+    }
+  };
+
   if (!report) return (
-    <div className="min-h-screen bg-[#F4F4F0]"><TopBar /><div className="p-12 font-mono text-sm">loading report…</div></div>
+    <div className="min-h-screen bg-[#F4F4F0]">{!isPublic && <TopBar />}<div className="p-12 font-mono text-sm">loading report…</div></div>
+  );
+
+  if (report.status === "missing") return (
+    <div className="min-h-screen bg-[#F4F4F0] flex items-center justify-center">
+      <div className="brutal-card p-10 max-w-md text-center">
+        <div className="overline text-[#FF3B00] mb-3">// 404</div>
+        <h2 className="font-display font-black text-3xl">Link unavailable</h2>
+        <p className="text-sm text-[#4A4A4A] mt-3">This share link has expired or been revoked.</p>
+        <a href="/" className="btn-primary inline-block mt-6 text-xs">Visit Pulse</a>
+      </div>
+    </div>
   );
 
   return (
@@ -246,6 +305,76 @@ export default function Report() {
               <div className="lg:col-span-5 space-y-6">
                 {plan.posting_schedule && (
                   <div className="brutal-card p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CalendarDays size={18} />
+                      <div className="overline">// posting schedule</div>
+                    </div>
+                    <div className="space-y-2">
+                      {plan.posting_schedule.map((s, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm border-b border-[#0A0A0A]/10 pb-2" data-testid={`schedule-${i}`}>
+                          <span className="font-mono font-bold w-10">{s.day}</span>
+                          <span className="overline text-[#0033FF] text-[10px]">{s.platform}</span>
+                          <span className="text-xs text-[#4A4A4A]">{s.format}</span>
+                          <span className="font-mono text-xs">{s.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {plan.daily_checklist && (
+                  <div className="brutal-card p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <ListChecks size={18} />
+                      <div className="overline">// daily checklist</div>
+                    </div>
+                    <div className="space-y-2">
+                      {plan.daily_checklist.map((c, i) => (
+                        <label key={i} className="flex items-start gap-3 text-sm cursor-pointer" data-testid={`checklist-${i}`}>
+                          <input type="checkbox" className="mt-1 w-4 h-4 border-2 border-[#0A0A0A] accent-[#FF3B00]" />
+                          <span className="leading-relaxed">{c}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {plan.key_risks && (
+                  <div className="brutal-card p-6 bg-[#FFF6E0]">
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertTriangle size={18} className="text-[#FF3B00]" />
+                      <div className="overline text-[#FF3B00]">// risks</div>
+                    </div>
+                    <ul className="space-y-2">
+                      {plan.key_risks.map((r, i) => (
+                        <li key={i} className="text-sm leading-relaxed">▸ {r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {!plan && report.status === "complete" && (
+          <section className="mt-12 brutal-card p-6">
+            <div className="overline mb-3 text-[#FF3B00]">// raw planner output</div>
+            <pre className="text-xs font-mono whitespace-pre-wrap">{report.agent_outputs?.action_planner || ""}</pre>
+          </section>
+        )}
+      </main>
+
+      <style>{`
+        @media print {
+          .print\\:hidden { display: none !important; }
+          body { background: white; }
+        }
+      `}</style>
+    </div>
+  );
+}
+    <div className="brutal-card p-6">
                     <div className="flex items-center gap-2 mb-4">
                       <CalendarDays size={18} />
                       <div className="overline">// posting schedule</div>
