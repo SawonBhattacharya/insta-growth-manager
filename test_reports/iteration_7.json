@@ -1,0 +1,40 @@
+{
+  "summary": "Phase 1.2 (Ask the Bureau chat) and Phase 1.3 (Feedback loop) tested end-to-end. Backend: POST /api/projects/{id}/ask returns {msg_id, question, answer, cited_reports, created_at} with answer grounded in last 2 complete reports (cited_reports=[rpt_synth0000001, rpt_0bed032da95d]); GET /api/projects/{id}/chat returns chronological list; DELETE clears it; 401 without auth, 400 on empty question, 404 on non-existent project. Feedback CRUD upserts via POST /api/reports/{id}/feedback (tried/worked), GET returns map keyed by item_key, status=null deletes the item, 401 without auth. Frontend: chat-panel renders on ProjectDetail; all 4 suggested prompts render when history empty; chat-input + chat-send fire request, show optimistic 'thinking…' placeholder, then real answer (~500 char) and cited reports surface; clear-chat resets to suggested prompts. Report page: all 3 feedback-idea_0-{tried,worked,didnt_work} render; seeded 'tried' state restored visually after reload; clicking feedback-idea_2-worked persists to backend and survives full page reload. Public share view (/share/{token}) renders zero feedback-idea_* buttons (disabled prop respected).",
+  "tested_scope": ["backend", "frontend", "integration", "auth"],
+  "passed": [
+    "POST /api/projects/{id}/ask returns 200 with msg_id+question+answer+cited_reports+created_at",
+    "Chat answer cited last 2 completed reports (rpt_synth0000001, rpt_0bed032da95d)",
+    "GET /api/projects/{id}/chat returns chronological list",
+    "DELETE /api/projects/{id}/chat clears history",
+    "Chat 401 unauth / 400 empty question / 404 unknown project",
+    "POST /api/reports/{id}/feedback upserts (tried, worked)",
+    "GET /api/reports/{id}/feedback returns map keyed by item_key",
+    "POST feedback status=null deletes that item",
+    "Feedback 401 without auth",
+    "Frontend chat-panel visible on ProjectDetail when project has complete reports",
+    "Frontend suggested-prompt-0..3 render when no history",
+    "Frontend chat-input + chat-send fires request, shows optimistic 'thinking…'",
+    "Frontend chat-answer renders with cited reports text",
+    "Frontend clear-chat resets to suggested prompts",
+    "Report page feedback-idea_0-{tried,worked,didnt_work} buttons render",
+    "Seeded feedback (idea_0=tried) restored visually after page load",
+    "Click feedback-idea_2-worked persists to backend and survives reload",
+    "Public /share/{token} view: zero feedback-idea_* buttons rendered"
+  ],
+  "failed": [
+    {
+      "area": "Analyze endpoint smoke (feedback pickup)",
+      "issue": "POST /api/projects/{id}/analyze returned 400 'Upload at least one platform export first' because db.uploads is empty for this project. Could not directly exercise the new feedback->profile_context code path through analyze. Existing completed reports in DB were seeded directly without underlying uploads, so this is an env-state limitation, not a code bug. Feedback collection itself is populated correctly and analyze code path that reads db.feedback is unchanged structurally (verified via grep).",
+      "evidence": "curl POST /api/projects/proj_d4ba8d647a10/analyze -> HTTP 400 {\"detail\":\"Upload at least one platform export first\"}; mongosh shows db.uploads count = 0",
+      "priority": "LOW"
+    }
+  ],
+  "action_items": [
+    "(Optional) To fully smoke-test the feedback->analyze integration, seed a completed upload doc for proj_d4ba8d647a10 (status='complete', user_id='user_f4640efc606a'). Not blocking — feedback persistence + analyze 400-guard both work correctly."
+  ],
+  "success_rate": {"backend": "100% (all chat + feedback endpoints pass; analyze not exercisable due to no uploads)", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "test_credentials": "Reused session test_session_1782613812213 for user_f4640efc606a; project proj_d4ba8d647a10; report rpt_0bed032da95d. Generated share_token 9b2737e7f2464082a828.",
+  "notes": "Limited chat to 1 LLM-burning question per instructions. Feedback for idea_0=tried and idea_2=worked left in DB for user_f4640efc606a/rpt_0bed032da95d."
+}

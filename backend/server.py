@@ -487,6 +487,18 @@ async def analyze(project_id: str, user: User = Depends(get_current_user)):
     profile_ctx = _profile_context(proj)
     uploads_ctx = _uploads_context(uploads)
 
+    # Surface prior feedback so the next run learns
+    prior_feedback = await db.feedback.find(
+        {"project_id": project_id, "user_id": user.user_id}, {"_id": 0}
+    ).to_list(500)
+    feedback_ctx = ""
+    if prior_feedback:
+        lines = ["\n\n=== PRIOR FEEDBACK FROM CREATOR ==="]
+        for f in prior_feedback[-40:]:
+            lines.append(f"- {f.get('item_key')}: {f.get('status')}" + (f" — {f.get('note')}" if f.get("note") else ""))
+        feedback_ctx = "\n".join(lines)
+    profile_ctx = profile_ctx + feedback_ctx
+
     async def push_log(text: str):
         await db.reports.update_one(
             {"report_id": report_id},
@@ -703,6 +715,119 @@ async def project_charts(project_id: str, user: User = Depends(get_current_user)
             if s.get("timeseries"):
                 platforms[plat]["timeseries"].extend(s["timeseries"])
     return {"platforms": platforms}
+
+
+# ---------------- Chat ("Ask the Bureau") ----------------
+@api_router.post("/projects/{project_id}/ask")
+async def ask_bureau(project_id: str, request: Request, user: User = Depends(get_current_user)):
+    proj = await db.projects.find_one({"project_id": project_id, "user_id": user.user_id}, {"_id": 0})
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+    body = await request.json()
+    question = (body.get("question") or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="question required")
+
+    # Pull recent context: last 2 complete reports + uploads summary
+    reports = await db.reports.find(
+        {"project_id": project_id, "user_id": user.user_id, "status": "complete"},
+        {"_id": 0, "logs": 0}
+    ).sort("created_at", -1).to_list(2)
+    uploads = await db.uploads.find(
+        {"project_id": project_id, "user_id": user.user_id}, {"_id": 0}
+    ).to_list(30)
+
+    ctx_parts = [_profile_context(proj), "\n\n=== RECENT REPORTS ===\n"]
+    for r in reports:
+        ctx_parts.append(f"\n-- Report {r['report_id']} ({r.get('created_at','')}) --\n")
+        for k, v in (r.get("agent_outputs") or {}).items():
+            ctx_parts.append(f"\n[{k}]\n{str(v)[:1500]}\n")
+        if r.get("final_plan"):
+            ctx_parts.append(f"\n[plan]\n{json.dumps(r['final_plan'])[:2000]}\n")
+    ctx_parts.append("\n\n=== UPLOADED DATA SUMMARY ===\n" + _uploads_context(uploads)[:3000])
+    context = "".join(ctx_parts)
+
+    sys_prompt = (
+        "You are the Bureau — the same five-agent growth team that produced this brand's reports. "
+        "Answer the user's question using ONLY the context provided: brand profile, prior agent outputs, "
+        "the action plans, and uploaded data summaries. Cite specific report IDs and numbers where relevant. "
+        "If the answer isn't in the context, say so honestly. Keep answers tight (under 200 words unless asked)."
+    )
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=f"ask_{project_id}_{uuid.uuid4().hex[:6]}",
+            system_message=sys_prompt,
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        prompt = f"CONTEXT:\n{context}\n\nQUESTION:\n{question}"
+        resp = await chat.send_message(UserMessage(text=prompt))
+        answer = resp if isinstance(resp, str) else str(resp)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM error: {e}")
+
+    msg_id = f"msg_{uuid.uuid4().hex[:10]}"
+    record = {
+        "msg_id": msg_id,
+        "project_id": project_id,
+        "user_id": user.user_id,
+        "question": question,
+        "answer": answer,
+        "cited_reports": [r["report_id"] for r in reports],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.brand_chat.insert_one(record)
+    return {k: v for k, v in record.items() if k != "_id"}
+
+
+@api_router.get("/projects/{project_id}/chat")
+async def chat_history(project_id: str, user: User = Depends(get_current_user)):
+    cursor = db.brand_chat.find(
+        {"project_id": project_id, "user_id": user.user_id}, {"_id": 0}
+    ).sort("created_at", 1)
+    return await cursor.to_list(200)
+
+
+@api_router.delete("/projects/{project_id}/chat")
+async def clear_chat(project_id: str, user: User = Depends(get_current_user)):
+    await db.brand_chat.delete_many({"project_id": project_id, "user_id": user.user_id})
+    return {"ok": True}
+
+
+# ---------------- Feedback ----------------
+@api_router.post("/reports/{report_id}/feedback")
+async def save_feedback(report_id: str, request: Request, user: User = Depends(get_current_user)):
+    rpt = await db.reports.find_one({"report_id": report_id, "user_id": user.user_id}, {"_id": 0, "logs": 0})
+    if not rpt:
+        raise HTTPException(status_code=404, detail="Report not found")
+    body = await request.json()
+    item_key = body.get("item_key")
+    status_val = body.get("status")  # tried | worked | didnt_work | null (clear)
+    note = body.get("note", "")
+    if not item_key:
+        raise HTTPException(status_code=400, detail="item_key required")
+    if status_val:
+        await db.feedback.update_one(
+            {"report_id": report_id, "user_id": user.user_id, "item_key": item_key},
+            {"$set": {
+                "project_id": rpt["project_id"],
+                "status": status_val,
+                "note": note,
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }},
+            upsert=True,
+        )
+    else:
+        await db.feedback.delete_one({"report_id": report_id, "user_id": user.user_id, "item_key": item_key})
+    return {"ok": True}
+
+
+@api_router.get("/reports/{report_id}/feedback")
+async def get_feedback(report_id: str, user: User = Depends(get_current_user)):
+    cursor = db.feedback.find(
+        {"report_id": report_id, "user_id": user.user_id}, {"_id": 0}
+    )
+    items = await cursor.to_list(500)
+    return {it["item_key"]: it for it in items}
 
 
 @api_router.get("/")

@@ -6,6 +6,7 @@ import { API } from "@/App";
 import { toast } from "sonner";
 import { UploadCloud, FileText, Trash2, Play, ArrowRight, Instagram, Twitter, Linkedin, Youtube, Music2, X, BookOpen } from "lucide-react";
 import ExportGuide from "@/components/ExportGuide";
+import ChatPanel from "@/components/ChatPanel";
 
 const PLATFORMS = [
   { key: "instagram", label: "Instagram", icon: Instagram, accent: "#E1306C" },
@@ -250,6 +251,12 @@ export default function ProjectDetail() {
             </div>
           </aside>
         </div>
+
+        {reports.some(r => r.status === "complete") && (
+          <div className="mt-8">
+            <ChatPanel projectId={projectId} />
+          </div>
+        )}
       </main>
     </div>
   );

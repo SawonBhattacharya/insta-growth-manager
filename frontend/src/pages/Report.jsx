@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Download, Printer, ArrowLeft, Target, ListChecks, CalendarDays, Lightbulb, AlertTriangle, Share2, Copy, Trash2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import FeedbackButtons from "@/components/FeedbackButtons";
 
 function MD({ text }) {
   if (!text) return null;
@@ -43,6 +44,7 @@ export default function Report() {
   const [projectName, setProjectName] = useState("");
   const [shareInfo, setShareInfo] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
+  const [feedback, setFeedback] = useState({});
 
   useEffect(() => {
     (async () => {
@@ -66,6 +68,10 @@ export default function Report() {
       try {
         const s = await axios.get(`${API}/reports/${reportId}/share`);
         if (s.data?.share_token) setShareInfo(s.data);
+      } catch {}
+      try {
+        const fb = await axios.get(`${API}/reports/${reportId}/feedback`);
+        setFeedback(fb.data || {});
       } catch {}
     })();
   }, [reportId, token, isPublic]);
@@ -375,6 +381,13 @@ export default function Report() {
                         <div className="font-display font-bold text-base mt-1">{c.title}</div>
                         <div className="text-xs text-[#4A4A4A] mt-1"><strong>Hook:</strong> {c.hook}</div>
                         <div className="text-xs text-[#4A4A4A]"><strong>CTA:</strong> {c.cta}</div>
+                        <FeedbackButtons
+                          reportId={reportId}
+                          itemKey={`idea_${i}`}
+                          current={feedback[`idea_${i}`]?.status}
+                          onChange={(v) => setFeedback({ ...feedback, [`idea_${i}`]: v ? { status: v } : undefined })}
+                          disabled={isPublic}
+                        />
                       </div>
                     ))}
                   </div>
