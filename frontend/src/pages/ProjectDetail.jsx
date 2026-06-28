@@ -213,7 +213,14 @@ export default function ProjectDetail() {
             </div>
 
             <div className="brutal-card p-6">
-              <div className="overline mb-4">// past reports ({reports.length})</div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="overline">// past reports ({reports.length})</div>
+                {reports.filter(r => r.status === "complete").length >= 2 && (
+                  <Link to={`/projects/${projectId}/compare`} className="overline text-[#0033FF] hover:text-[#FF3B00]" data-testid="open-compare">
+                    Compare →
+                  </Link>
+                )}
+              </div>
               {reports.length === 0 ? (
                 <div className="text-sm text-[#8A8A8A] py-3">No reports yet.</div>
               ) : (

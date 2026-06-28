@@ -8,6 +8,7 @@ import ProjectSetup from "@/pages/ProjectSetup";
 import ProjectDetail from "@/pages/ProjectDetail";
 import Analysis from "@/pages/Analysis";
 import Report from "@/pages/Report";
+import Compare from "@/pages/Compare";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -114,6 +115,7 @@ function AppRouter() {
       <Route path="/projects/new" element={<ProtectedRoute><ProjectSetup /></ProtectedRoute>} />
       <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
       <Route path="/projects/:projectId/analyze/:reportId" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
+      <Route path="/projects/:projectId/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
       <Route path="/reports/:reportId" element={<ProtectedRoute><Report /></ProtectedRoute>} />
       <Route path="/share/:token" element={<Report />} />
     </Routes>

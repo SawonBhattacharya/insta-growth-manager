@@ -584,6 +584,27 @@ async def list_reports(project_id: str, user: User = Depends(get_current_user)):
     return await cursor.to_list(50)
 
 
+@api_router.get("/projects/{project_id}/trend")
+async def project_trend(project_id: str, user: User = Depends(get_current_user)):
+    cursor = db.reports.find(
+        {"project_id": project_id, "user_id": user.user_id, "status": "complete"},
+        {"_id": 0, "logs": 0, "agent_outputs": 0}
+    ).sort("created_at", 1)
+    items = await cursor.to_list(50)
+    series = []
+    for r in items:
+        ns = (r.get("final_plan") or {}).get("north_star") or {}
+        series.append({
+            "report_id": r["report_id"],
+            "created_at": r["created_at"],
+            "platforms": r.get("platforms", []),
+            "north_star_metric": ns.get("metric"),
+            "north_star_current": ns.get("current"),
+            "north_star_target": ns.get("target"),
+        })
+    return {"trend": series}
+
+
 # ---------------- Share links ----------------
 @api_router.post("/reports/{report_id}/share")
 async def create_share(report_id: str, request: Request, user: User = Depends(get_current_user)):

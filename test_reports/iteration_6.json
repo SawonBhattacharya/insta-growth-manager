@@ -1,0 +1,38 @@
+{
+  "summary": "Phase 1.1 Compare feature tested end-to-end. Backend GET /api/projects/{id}/trend returns 200 with ASC-ordered series of completed reports including all required fields (report_id, created_at, platforms, north_star_metric/current/target). 401 returned without auth. A synthetic second completed report (rpt_synth0000001) was inserted into mongo per instructions to enable diff testing alongside existing rpt_0bed032da95d. Frontend /projects/proj_d4ba8d647a10/compare page renders with TopBar, populates both pickers with 2 completed reports, defaults picker-a to earlier (6/28) and picker-b to later (7/15) report, renders trend-chart with current + target lines (recharts .recharts-line count=2), and renders diff-section with all 5 side-by-side sections (north-star, weekly themes, content ideas, daily checklist, key risks) with both Report A and Report B columns. ProjectDetail shows 'Compare →' link (open-compare testid) and clicking navigates to /compare. Dashboard smoke loads.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "GET /api/projects/{id}/trend 200 with ASC-ordered 2-item series and all required fields",
+    "GET /api/projects/{id}/trend 401 without auth",
+    "Compare page loads (data-testid=compare-page)",
+    "picker-a and picker-b populated with completed reports",
+    "Defaults to last two completed reports (a=earlier, b=later)",
+    "trend-chart renders with current + target lines",
+    "diff-section renders side-by-side panels for all 5 sections",
+    "ProjectDetail open-compare link visible when >=2 completed reports",
+    "open-compare navigates to /projects/{id}/compare",
+    "Dashboard smoke load"
+  ],
+  "failed": [
+    {
+      "area": "Compare page empty state",
+      "issue": "Clearing both pickers (setting them to empty value) does not collapse diff-section back to the empty-state. The local a/b state holds stale fetched reports because the second useEffect only fetches when aId/bId are truthy and never resets state to null when they become empty.",
+      "evidence": "After selecting empty value in picker-a and picker-b, URL params cleared but diff-section still shows previous data; 'Pick two reports to compare' empty-state not displayed. Note: default load with <2 reports path was not directly exercised since the env now has 2 reports.",
+      "priority": "LOW"
+    },
+    {
+      "area": "Console warning",
+      "issue": "Hydration warning '<span> cannot be a child of <option>' on Compare page caused by Emergent dev tooling injecting span wrappers inside <option> children. Cosmetic dev-mode noise, not app code.",
+      "evidence": "Console error on /compare with x-ve-dynamic span inside select options",
+      "priority": "LOW"
+    }
+  ],
+  "action_items": [
+    "(Optional, LOW) In Compare.jsx, reset local a/b state to null when aId/bId become empty so the empty-state UI surfaces after user deselects."
+  ],
+  "success_rate": {"backend": "100%", "frontend": "~95% (1 minor stale-state issue in empty-state UX)"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "test_credentials": "Used existing mongo session token test_session_1782613812213 for user_f4640efc606a / proj_d4ba8d647a10. Inserted synthetic completed report rpt_synth0000001.",
+  "notes": "Did not retest share/export-guide flows beyond noting dashboard loads, per main agent instruction."
+}
