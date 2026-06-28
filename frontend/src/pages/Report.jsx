@@ -127,13 +127,92 @@ export default function Report() {
 
   return (
     <div className="min-h-screen bg-[#F4F4F0]" data-testid="report-page">
-      <TopBar active="dash" />
+      {!isPublic && <TopBar active="dash" />}
+      {isPublic && (
+        <header className="border-b-2 border-[#0A0A0A] bg-[#F4F4F0]">
+          <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 h-16 flex items-center justify-between">
+            <a href="/" className="flex items-center gap-3" data-testid="public-pulse-logo">
+              <div className="w-8 h-8 bg-[#FF3B00] border-2 border-[#0A0A0A] flex items-center justify-center">
+                <div className="w-2 h-2 bg-white"></div>
+              </div>
+              <div>
+                <div className="font-display font-black text-xl leading-none">PULSE</div>
+                <div className="overline text-[#8A8A8A] leading-none mt-0.5">growth.intelligence</div>
+              </div>
+            </a>
+            <div className="text-xs font-mono text-[#8A8A8A] hidden sm:block">Read-only · shared report</div>
+            <a href="/" className="btn-secondary !py-2 !px-3 text-xs" data-testid="public-cta">Get your own report</a>
+          </div>
+        </header>
+      )}
       <main className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 py-10 print:py-2">
         <div className="flex items-center justify-between flex-wrap gap-4 print:hidden">
-          <Link to={`/projects/${report.project_id}`} className="overline text-[#8A8A8A] hover:text-[#FF3B00]" data-testid="back-to-project">
-            <ArrowLeft size={12} className="inline mr-1" /> back to brand
-          </Link>
-          <div className="flex gap-3">
+          {!isPublic ? (
+            <Link to={`/projects/${report.project_id}`} className="overline text-[#8A8A8A] hover:text-[#FF3B00]" data-testid="back-to-project">
+              <ArrowLeft size={12} className="inline mr-1" /> back to brand
+            </Link>
+          ) : (
+            <div className="overline text-[#8A8A8A]">{projectName ? `${projectName} · ` : ""}Growth report</div>
+          )}
+          <div className="flex gap-3 flex-wrap">
+            {!isPublic && (
+              <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+                <DialogTrigger asChild>
+                  <button className="btn-secondary !py-2 !px-3 text-xs" data-testid="share-report-button">
+                    <Share2 size={14} className="inline mr-1" /> Share
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg rounded-none border-2 border-[#0A0A0A] bg-white p-0">
+                  <div className="p-6 sm:p-8" data-testid="share-dialog">
+                    <div className="overline text-[#0033FF]">// share with a client</div>
+                    <h2 className="font-display font-black text-2xl tracking-tighter mt-2">Public, read-only link</h2>
+                    <p className="text-sm text-[#4A4A4A] mt-2">Anyone with the URL can view the report. No login required. Revoke it any time.</p>
+                    {shareInfo?.share_token ? (
+                      <div className="mt-6 space-y-4">
+                        <div className="border-2 border-[#0A0A0A] p-3 flex items-center gap-2">
+                          <input readOnly value={shareUrl} className="flex-1 bg-transparent text-xs font-mono outline-none" data-testid="share-url-input" />
+                          <button onClick={copyShare} className="btn-primary !py-1 !px-3 text-[10px]" data-testid="copy-share-url">
+                            <Copy size={12} className="inline mr-1" /> Copy
+                          </button>
+                        </div>
+                        <div className="text-xs font-mono text-[#8A8A8A]">
+                          {shareInfo.expires_at ? `Expires ${new Date(shareInfo.expires_at).toLocaleDateString()}` : "No expiry — open until you revoke"}
+                        </div>
+                        <div className="flex gap-3">
+                          <a href={shareUrl} target="_blank" rel="noreferrer" className="btn-secondary !py-2 !px-3 text-xs" data-testid="open-share-url">
+                            <ExternalLink size={12} className="inline mr-1" /> Open preview
+                          </a>
+                          <button onClick={revokeShare} className="btn-secondary !py-2 !px-3 text-xs !text-[#FF3B00] !border-[#FF3B00] hover:!bg-[#FF3B00] hover:!text-white" data-testid="revoke-share">
+                            <Trash2 size={12} className="inline mr-1" /> Revoke
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mt-6 space-y-3">
+                        <div className="overline">// pick an expiry</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {[
+                            { label: "7 days", days: 7 },
+                            { label: "30 days", days: 30 },
+                            { label: "90 days", days: 90 },
+                            { label: "No expiry", days: 0 },
+                          ].map((opt) => (
+                            <button
+                              key={opt.label}
+                              onClick={() => createShare(opt.days)}
+                              className="border-2 border-[#0A0A0A] bg-white hover:bg-[#0A0A0A] hover:text-white py-3 px-2 font-display font-bold text-xs uppercase tracking-wide transition-colors"
+                              data-testid={`share-expiry-${opt.days}`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
             <button className="btn-secondary !py-2 !px-3 text-xs" onClick={downloadJson} data-testid="download-json">
               <Download size={14} className="inline mr-1" /> JSON
             </button>
