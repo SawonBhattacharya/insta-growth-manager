@@ -65,8 +65,8 @@ export default function Compare() {
 
   useEffect(() => {
     (async () => {
-      if (aId) { try { const r = await axios.get(`${API}/reports/${aId}`); setA(r.data); } catch {} }
-      if (bId) { try { const r = await axios.get(`${API}/reports/${bId}`); setB(r.data); } catch {} }
+      if (aId) { try { const r = await axios.get(`${API}/reports/${aId}`); setA(r.data); } catch {} } else { setA(null); }
+      if (bId) { try { const r = await axios.get(`${API}/reports/${bId}`); setB(r.data); } catch {} } else { setB(null); }
     })();
   }, [aId, bId]);
 
