@@ -499,6 +499,12 @@ async def analyze(project_id: str, user: User = Depends(get_current_user)):
         feedback_ctx = "\n".join(lines)
     profile_ctx = profile_ctx + feedback_ctx
 
+    mi_doc = await db.market_intel.find_one(
+        {"project_id": project_id, "user_id": user.user_id}, {"_id": 0}
+    )
+    if mi_doc and mi_doc.get("intel"):
+        profile_ctx += "\n\n=== MARKET INTEL (placeholder, refresh anytime) ===\n" + json.dumps(mi_doc["intel"])[:3000]
+
     async def push_log(text: str):
         await db.reports.update_one(
             {"report_id": report_id},
