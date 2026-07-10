@@ -1,0 +1,21 @@
+{
+  "summary": "Retest of the public share view after the Report.jsx line 227 fix `(reportId || token || '').slice(-4)`. The previous HIGH-priority React crash on /share/{valid_token} is fully resolved. Fresh share token 0aefbe15bf994abf904c was minted via the authenticated API for report rpt_0bed032da95d, then visited at /share/{token} in an unauthenticated browser context. The page renders cleanly: data-testid=report-page visible, data-testid=public-pulse-logo visible, data-testid=public-cta visible, data-testid=share-report-button correctly ABSENT from the public DOM. Cover shows 'PULSE GROWTH REPORT №904C' (last 4 of the token, since reportId is undefined in public mode — proves the fix path). Full body renders (north-star block, bureau findings with agent cards visible in screenshot). No React error overlay, no JS pageerrors. Invalid /share/bad_invalid_xyz still renders the 'Link unavailable' state. The 401s in console are expected (unauthenticated /api/auth/me probe) and unrelated.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "/share/{valid_token} renders report-page without login (no React crash)",
+    "public-pulse-logo data-testid visible in public header",
+    "public-cta ('Get your own report') data-testid visible",
+    "share-report-button correctly NOT present in public DOM (gated by !isPublic)",
+    "Cover label 'Pulse Growth Report №904C' renders — confirms `(reportId || token || '').slice(-4)` fallback works",
+    "Full report body renders: north-star (Comment Rate, Current/Target/Why), bureau findings agent cards",
+    "No React/webpack error overlay; no JS pageerrors captured",
+    "/share/bad_invalid_xyz still shows 'Link unavailable' friendly state",
+    "Backend POST /api/reports/{id}/share returns 200 with share_token + expires_at"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "test_credentials": "Reused user_f4640efc606a / report rpt_0bed032da95d. Fresh mongo session test_session_iter5_1782616277466 minted to call share API. Public share token: 0aefbe15bf994abf904c (7-day expiry, left active for any follow-up)."
+}

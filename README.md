@@ -143,3 +143,4 @@ The workbook is expected to contain sheets similar to:
 - `follow`
 
 Each sheet should include a `Date` column and a `Primary` value column.
+

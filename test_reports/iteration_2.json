@@ -1,0 +1,54 @@
+{
+  "summary": "Tested two new features: share links (backend) and public share view + export guides (frontend). All 9 backend share endpoint checks PASS (POST with 7d expiry, POST with 0d no-expiry, GET, DELETE, GET after delete returns {}, public no-auth fetch returns full report+project+charts+expires_at, invalid token -> 404, expired token -> 410, confirmed public endpoint works with NO Authorization/Cookie headers). Frontend testing is BLOCKED: /app/frontend/src/pages/Report.jsx has a syntax error at line 393:16 ('Unexpected token') causing the entire webpack build to fail with 'Compiled with problems' overlay on every route. Could not test share dialog UI, public /share/:token page, or export guide dialogs because nothing renders.",
+  "tested_scope": ["backend", "frontend", "integration"],
+  "passed": [
+    "POST /api/reports/{id}/share with expires_in_days=7 returns share_token + expires_at (~7 days out)",
+    "POST /api/reports/{id}/share with expires_in_days=0 returns expires_at=null",
+    "GET /api/reports/{id}/share returns existing share record with share_token + expires_at",
+    "DELETE /api/reports/{id}/share returns {ok:true}; subsequent GET returns {} (empty)",
+    "GET /api/public/share/{token} returns 200 with keys [report, project, charts, expires_at] using NO auth headers (explicitly stripped Authorization and Cookie)",
+    "Public payload: project={account_name:'TestBrand', niche:'fitness'}; report.status=complete with agent_outputs and final_plan present",
+    "GET /api/public/share/{invalid_token} returns 404 {detail:'Invalid or expired link'}",
+    "Expired token (expires_at set to 2020-01-01 via mongosh) returns 410 {detail:'Link expired'}"
+  ],
+  "failed": [
+    {
+      "area": "frontend build",
+      "issue": "Report.jsx has structural corruption: the component's return + function close at line 376, but orphan JSX (posting_schedule card + closing `)}` on line 393) continues from line 377 onward. Webpack/Babel: 'SyntaxError: Unexpected token (393:16)'. Compile fails -> every route (including /share/:token) shows the 'Compiled with problems' error overlay instead of the app.",
+      "evidence": "supervisor frontend.out.log: 'ERROR in [eslint] src/pages/Report.jsx Line 393:16: Parsing error: Unexpected token (393:16)'. View of Report.jsx lines 374-393 shows `};` ending the component at 375-376, then unmatched `<div className=\"brutal-card p-6\">` on line 377 with a stray `)}` at line 393:16.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend share dialog",
+      "issue": "Not testable due to compile error.",
+      "evidence": "page renders the webpack error overlay, no data-testid=share-report-button / share-dialog / share-expiry-7 / share-url-input / copy-share-url / revoke-share visible.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend public share view (/share/:token)",
+      "issue": "Not testable due to compile error.",
+      "evidence": "data-testid=report-page, public-pulse-logo, public-cta all absent; body shows only the error overlay.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend export guides on ProjectDetail",
+      "issue": "Not testable due to compile error blocking the whole app.",
+      "evidence": "Cannot reach ProjectDetail; compile fails.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend invalid share token UX",
+      "issue": "Not testable due to compile error.",
+      "evidence": "/share/bad_invalid_token_xyz shows the error overlay, not a friendly 'Link unavailable' state.",
+      "priority": "HIGH"
+    }
+  ],
+  "action_items": [
+    "Fix the syntax error in /app/frontend/src/pages/Report.jsx around lines 376-393. The component's `return (...); }` appears to close prematurely, leaving the posting_schedule JSX block (and likely daily_checklist) as dangling code outside the function. Likely a misplaced `}` or missing wrapper JSX. After fix, ensure `npx eslint src/pages/Report.jsx` is clean and webpack compiles before re-running UI tests.",
+    "Re-run frontend tests after fix: (a) /share/{valid_token} renders report-page + public-pulse-logo + public-cta and no share-report-button; (b) /share/{invalid_token} shows friendly 'Link unavailable'; (c) on logged-in Report page, share-report-button opens share-dialog with share-expiry-7 -> share-url-input + copy-share-url + revoke-share; (d) ProjectDetail shows export-guide-trigger-{platform} that opens export-guide-{platform} for all 5 platforms."
+  ],
+  "success_rate": {"backend": "100%", "frontend": "0% (blocked by compile error)"},
+  "retest_needed": true,
+  "full_testing_deferred": true,
+  "test_credentials": "Mongo-minted session via /app/memory/test_credentials.md. Reused existing completed report rpt_0bed032da95d (proj_d4ba8d647a10, owner user_f4640efc606a). New session token minted for that owner to exercise share endpoints."
+}

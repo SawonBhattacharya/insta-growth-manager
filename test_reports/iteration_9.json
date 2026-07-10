@@ -1,0 +1,17 @@
+{
+  "summary": "Verified iteration_8 medium-priority fix: analyze() now reads db.market_intel and merges into profile_ctx. Backend reloaded cleanly and /api/ smoke endpoint returns 200 OK.",
+  "tested_scope": ["backend"],
+  "passed": [
+    "Code-grep confirms market_intel.find_one block exists at lines 502-506 of /app/backend/server.py inside analyze() flow (right after feedback_ctx merge)",
+    "Block correctly scopes by project_id + user_id, guards on mi_doc.get('intel'), and appends '=== MARKET INTEL (placeholder, refresh anytime) ===' header to profile_ctx (truncated to 3000 chars)",
+    "profile_ctx is then consumed by the agent loop at line 524 ('CREATOR PROFILE:' + profile_ctx), so the intel actually reaches the agents",
+    "No syntax errors — uvicorn auto-reload completed successfully (supervisor logs show clean 'Application startup complete.')",
+    "Smoke test GET /api/ -> HTTP 200, body {\"app\":\"pulse\",\"ok\":true}"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "n/a"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Per request, did NOT execute analyze() or call market-intel refresh (credit-saving). Pure code-landed + health check verification."
+}

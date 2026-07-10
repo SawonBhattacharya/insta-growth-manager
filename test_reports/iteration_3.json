@@ -1,0 +1,41 @@
+{
+  "summary": "Retest after Report.jsx syntax fix. Webpack now compiles cleanly (only the pre-existing ProjectDetail useEffect warning). Report page renders, dashboard renders, invalid /share/:token shows friendly state, public share view renders the report skeleton, and ALL FIVE export-guide dialogs (instagram/twitter/linkedin/youtube/tiktok) on ProjectDetail open and contain content. HOWEVER the entire share UI block in Report.jsx was lost when the duplicated tail was truncated: the state (shareInfo/shareOpen) and the handler functions (createShare/revokeShare/copyShare) still exist, but no JSX renders share-report-button, share-dialog, share-expiry-7/30/0, share-url-input, copy-share-url, revoke-share, or open-share-url. Public share view also lacks public-pulse-logo and public-cta data-testids. Net: compile blocker resolved, but the share feature UI itself is missing — not testable.",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "Webpack compiles (no error overlay) - blocker from iteration_2 resolved",
+    "Logged-in /reports/{id} renders data-testid=report-page (cover, charts, narratives, plan visible)",
+    "/share/{valid_token} renders data-testid=report-page WITHOUT requiring auth (public endpoint integration works)",
+    "/share/bad_invalid_token_xyz shows a friendly 'Link unavailable / expired / invalid' message, no webpack overlay, no crash",
+    "ProjectDetail: export-guide-trigger-{platform} present and clicking opens export-guide-{platform} Dialog with content for all 5 platforms (instagram, twitter, linkedin, youtube, tiktok)",
+    "Regression: /dashboard renders project list, no white screen, no compile errors"
+  ],
+  "failed": [
+    {
+      "area": "frontend share dialog (logged-in Report page)",
+      "issue": "Entire share UI block missing from /app/frontend/src/pages/Report.jsx. State `shareInfo`, `shareOpen` and handlers `createShare`, `revokeShare`, `copyShare` are still defined (lines 44-106) and `Share2`/`Dialog` are imported, but no JSX references them. No element with data-testid=share-report-button exists in the DOM on the logged-in report page, so the share dialog flow cannot be opened.",
+      "evidence": "`grep -n 'share-report-button\\|share-dialog\\|share-expiry\\|share-url-input\\|copy-share-url\\|revoke-share\\|open-share-url' /app/frontend/src/pages/Report.jsx` returns 0 matches. Playwright: wait_for_selector('[data-testid=\"share-report-button\"]') timed out after 8000ms on /reports/rpt_0bed032da95d while report-page renders fine.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend public share view markers",
+      "issue": "Public-mode header/CTA not rendered. `grep public-pulse-logo|public-cta /app/frontend/src/pages/Report.jsx` returns 0 matches. The report body renders for /share/:token but the required `public-pulse-logo` and `public-cta` data-testids are absent, and there's no public-mode header replacing the authenticated TopBar (only the TopBar is conditionally hidden via !isPublic).",
+      "evidence": "Playwright is_visible('[data-testid=\"public-pulse-logo\"]') and ('[data-testid=\"public-cta\"]') both false on /share/{valid_token}.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend share revoke flow",
+      "issue": "Cannot be exercised because the share-report-button / share-dialog never render. Blocked on the same missing-UI issue above.",
+      "evidence": "revoke-share selector never appears.",
+      "priority": "HIGH"
+    }
+  ],
+  "action_items": [
+    "Restore the share UI in /app/frontend/src/pages/Report.jsx: render a <Dialog open={shareOpen} onOpenChange={setShareOpen}> with a trigger button having data-testid=share-report-button (only when !isPublic), DialogContent with data-testid=share-dialog. Inside, when shareInfo is null show three expiry buttons data-testid=share-expiry-7 / share-expiry-30 / share-expiry-0 calling createShare(days). When shareInfo exists, render a readonly <input data-testid=share-url-input value={shareUrl} />, a copy button data-testid=copy-share-url onClick={copyShare}, a revoke button data-testid=revoke-share onClick={revokeShare}, and an open-in-new-tab link data-testid=open-share-url href={shareUrl} target=_blank.",
+    "Add public-mode header inside Report.jsx when isPublic: render a small Pulse logo with data-testid=public-pulse-logo and a CTA (e.g. 'Make your own report') with data-testid=public-cta linking to / .",
+    "After restoring the JSX, re-run frontend tests for: (a) share-report-button -> share-dialog -> share-expiry-7 -> share-url-input + copy/revoke/open, (b) revoke-share returns to expiry options, (c) /share/{valid_token} shows public-pulse-logo + public-cta and NO share-report-button."
+  ],
+  "success_rate": {"backend": "100% (from iteration_2, not retested)", "frontend": "~55% (4 of 7 frontend checks passed; share dialog + public-mode markers missing UI)"},
+  "retest_needed": true,
+  "full_testing_deferred": true,
+  "test_credentials": "Mongo-minted session token test_session_retest_1782615713864 for user_f4640efc606a; report rpt_0bed032da95d; project proj_d4ba8d647a10. Share endpoint POST/DELETE confirmed working via curl during this iteration."
+}

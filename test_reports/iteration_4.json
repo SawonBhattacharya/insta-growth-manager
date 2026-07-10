@@ -1,0 +1,36 @@
+{
+  "summary": "Share UI restoration retest. Logged-in share dialog flow works end-to-end: share-report-button opens share-dialog, all 4 expiry buttons (share-expiry-7/30/90/0) render, picking 7-day creates share, share-url-input + copy-share-url + revoke-share + open-share-url appear, and revoke restores the 4 expiry buttons. Invalid /share/{bad_token} still renders the friendly 'Link unavailable' state. HOWEVER a NEW HIGH-priority regression was introduced: /share/{valid_token} now crashes with a React runtime error 'Cannot read properties of undefined (reading slice)' inside Report. Root cause: line 227 of /app/frontend/src/pages/Report.jsx calls `reportId.slice(-4)`, but in public mode the route param is `token` (reportId is undefined). The backend public endpoint returns 200 with valid payload; the crash is purely in the React render. Because the public page never reaches a stable DOM, the public-pulse-logo / public-cta data-testids could not be observed in this run (they ARE present in the JSX at lines 134/144, but the crash short-circuits rendering before they paint reliably). Export-guide regression on ProjectDetail could not be independently re-verified this iteration (the project page redirected after cookie add ordering, but iteration_3 already confirmed all 5 platforms — no Report.jsx changes touch ExportGuide so no expected regression).",
+  "tested_scope": ["frontend", "integration"],
+  "passed": [
+    "Logged-in /reports/{id} renders report-page and share-report-button is visible (UI restored)",
+    "Clicking share-report-button opens share-dialog",
+    "All 4 expiry buttons present: share-expiry-7, share-expiry-30, share-expiry-90, share-expiry-0",
+    "share-expiry-7 click creates a working share link; share-url-input shows /share/{token}, copy-share-url / revoke-share / open-share-url all visible",
+    "Clicking revoke-share removes the URL inputs and the 4 expiry buttons reappear (confirmed visually in screenshot)",
+    "Invalid /share/bad_invalid_xyz still shows 'Link unavailable' friendly state",
+    "Backend GET /api/public/share/{token} returns 200 with valid report JSON"
+  ],
+  "failed": [
+    {
+      "area": "frontend public share view (/share/{token}) - NEW REGRESSION",
+      "issue": "React runtime crash: 'TypeError: Cannot read properties of undefined (reading slice)' in Report component. Source: /app/frontend/src/pages/Report.jsx line 227 — `Pulse Growth Report №{reportId.slice(-4).toUpperCase()}` is evaluated even in public mode where useParams() gives only `token`, leaving `reportId` undefined. The webpack error overlay covers the page; data-testid=report-page never becomes stably visible in public mode.",
+      "evidence": "Screenshot from Playwright on /share/23f65ea61e01442ca794 shows the dev error overlay with stack trace pointing at Report (bundle.js:6890:32). Curl of /api/public/share/{same token} returns 200 with valid payload — backend is fine.",
+      "priority": "HIGH"
+    },
+    {
+      "area": "frontend public share view - markers cannot be confirmed",
+      "issue": "public-pulse-logo and public-cta data-testids exist in JSX (Report.jsx lines 134, 144) but cannot be verified at runtime because the page crashes before they render. They will only work after the slice() crash is fixed.",
+      "evidence": "wait_for_selector('[data-testid=\"report-page\"]') timed out at 25s on /share/{valid_token}; error overlay visible.",
+      "priority": "HIGH (blocked by the slice crash above)"
+    }
+  ],
+  "action_items": [
+    "Fix /app/frontend/src/pages/Report.jsx line 227: replace `reportId.slice(-4)` with `(reportId || token || '').slice(-4)` (or guard the whole №{...} expression with an isPublic check). This will unblock the public share view and let the public-pulse-logo / public-cta markers actually render.",
+    "After the fix, re-verify: GET /share/{valid_token} renders report-page + public-pulse-logo + public-cta and that share-report-button is NOT in the public DOM (already correctly gated by !isPublic in JSX).",
+    "No changes needed to the logged-in share dialog flow or the invalid-token state — both work as specified."
+  ],
+  "success_rate": {"backend": "100% (public+private share endpoints verified)", "frontend": "~70% (logged-in share dialog + invalid token pass; public share view crashes)"},
+  "retest_needed": true,
+  "full_testing_deferred": true,
+  "test_credentials": "Mongo-minted session test_session_iter4_1782615991618 for user_f4640efc606a; report rpt_0bed032da95d; project proj_d4ba8d647a10. Fresh share token minted via UI during test: 23f65ea61e01442ca794 (then revoked)."
+}
