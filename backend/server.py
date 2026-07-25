@@ -20,8 +20,29 @@ from pydantic import BaseModel, Field, ConfigDict
 import httpx
 import pandas as pd
 from pypdf import PdfReader
+import stripe
+import resend
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+# Configure optional APIs
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY", "")
+resend.api_key = os.environ.get("RESEND_API_KEY", "")
+
+def send_transactional_email(to_email: str, subject: str, text: str):
+    if resend.api_key:
+        try:
+            resend.Emails.send({
+                "from": "onboarding@resend.dev",
+                "to": to_email,
+                "subject": subject,
+                "text": text
+            })
+            logging.info(f"Email sent to {to_email}")
+        except Exception as e:
+            logging.error(f"Failed to send email to {to_email}: {e}")
+    else:
+        logging.info(f"[MOCK EMAIL to {to_email}] Subject: {subject} | Body: {text}")
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -42,6 +63,7 @@ class User(BaseModel):
     email: str
     name: str
     picture: Optional[str] = None
+    subscription_tier: str = "free"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class ProjectCreate(BaseModel):
@@ -120,8 +142,32 @@ async def auth_session(request: Request, response: Response):
             "email": email,
             "name": data["name"],
             "picture": data.get("picture"),
+            "subscription_tier": "free",
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
+
+        # Inject Demo Project
+        dummy_project_id = f"proj_{uuid.uuid4().hex[:12]}"
+        await db.projects.insert_one({
+            "project_id": dummy_project_id,
+            "user_id": user_id,
+            "account_name": "Demo Brand (Acme Corp)",
+            "niche": "B2B SaaS / Tech",
+            "audience": "Founders, Indie Hackers, Tech Enthusiasts",
+            "goals": "Increase brand awareness and product signups",
+            "content_style": "Educational, transparent, behind the scenes",
+            "posting_capacity": "3-5 times a week",
+            "offers_or_products": "Acme SaaS platform ($29/mo)",
+            "inspiration_accounts": "@ycombinator, @thehustle",
+            "constraints": "No full-time video editor",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        
+        send_transactional_email(
+            email, 
+            "Welcome to Pulse \U0001f680", 
+            "Thanks for joining Pulse! We've set up a Demo Brand in your dashboard to help you get started."
+        )
 
     session_token = data["session_token"]
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
@@ -471,6 +517,12 @@ async def analyze(project_id: str, user: User = Depends(get_current_user)):
     if not uploads:
         raise HTTPException(status_code=400, detail="Upload at least one platform export first")
 
+    # Paywall Mock Check: Free tier only gets 1 report per project
+    if user.subscription_tier == "free":
+        report_count = await db.reports.count_documents({"project_id": project_id, "user_id": user.user_id, "status": "complete"})
+        if report_count >= 1:
+            raise HTTPException(status_code=402, detail="Free plan limit reached. Upgrade to Pro for unlimited reports.")
+
     report_id = f"rpt_{uuid.uuid4().hex[:12]}"
     await db.reports.insert_one({
         "report_id": report_id,
@@ -498,6 +550,10 @@ async def analyze(project_id: str, user: User = Depends(get_current_user)):
             lines.append(f"- {f.get('item_key')}: {f.get('status')}" + (f" — {f.get('note')}" if f.get("note") else ""))
         feedback_ctx = "\n".join(lines)
     profile_ctx = profile_ctx + feedback_ctx
+
+    comp_doc = await db.competitors.find_one({"project_id": project_id, "user_id": user.user_id}, {"_id": 0})
+    if comp_doc and comp_doc.get("handles"):
+        profile_ctx += "\n\n=== COMPETITOR WATCHLIST ===\n" + ", ".join(comp_doc["handles"])
 
     mi_doc = await db.market_intel.find_one(
         {"project_id": project_id, "user_id": user.user_id}, {"_id": 0}
@@ -572,6 +628,13 @@ async def analyze(project_id: str, user: User = Depends(get_current_user)):
                 }},
             )
             await push_log("[done] Growth plan ready")
+            
+            # Send report ready email
+            send_transactional_email(
+                user.email,
+                "Your Pulse Growth Report is Ready \U0001f4ca",
+                f"Your 30-day action plan for {proj.get('account_name', 'your brand')} is ready to view. Login to Pulse to see your strategy."
+            )
         except Exception as e:
             await db.reports.update_one(
                 {"report_id": report_id},
@@ -835,6 +898,39 @@ async def get_feedback(report_id: str, user: User = Depends(get_current_user)):
     items = await cursor.to_list(500)
     return {it["item_key"]: it for it in items}
 
+# ---------------- Competitors ----------------
+class CompetitorPayload(BaseModel):
+    handle: str
+
+@api_router.post("/projects/{project_id}/competitors")
+async def add_competitor(project_id: str, payload: CompetitorPayload, user: User = Depends(get_current_user)):
+    await db.competitors.update_one(
+        {"project_id": project_id, "user_id": user.user_id},
+        {"$addToSet": {"handles": payload.handle}},
+        upsert=True
+    )
+    return {"ok": True}
+
+@api_router.delete("/projects/{project_id}/competitors/{handle}")
+async def remove_competitor(project_id: str, handle: str, user: User = Depends(get_current_user)):
+    await db.competitors.update_one(
+        {"project_id": project_id, "user_id": user.user_id},
+        {"$pull": {"handles": handle}}
+    )
+    return {"ok": True}
+
+@api_router.get("/projects/{project_id}/competitors")
+async def get_competitors(project_id: str, user: User = Depends(get_current_user)):
+    doc = await db.competitors.find_one({"project_id": project_id, "user_id": user.user_id}, {"_id": 0})
+    return {"handles": doc.get("handles", []) if doc else []}
+
+# ---------------- Subscription / Stripe (Mock) ----------------
+@api_router.post("/users/me/upgrade")
+async def upgrade_subscription(user: User = Depends(get_current_user)):
+    # In a real app, this would create a Stripe Checkout session and return the URL.
+    # We mock it here by instantly upgrading the user.
+    await db.users.update_one({"user_id": user.user_id}, {"$set": {"subscription_tier": "pro"}})
+    return {"ok": True, "message": "Upgraded to Pro via mock."}
 
 # ---------------- Market Intel ----------------
 NICHE_SKELETON = {

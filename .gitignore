@@ -19,6 +19,7 @@ credentials.json
 # Project-specific
 deploy_notes.txt
 outputs/
+backend/mongodb.txt
 
 # IDE and editors
 .idea/

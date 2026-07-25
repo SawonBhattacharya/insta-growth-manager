@@ -24,21 +24,26 @@ export default function ProjectDetail() {
   const [project, setProject] = useState(null);
   const [uploads, setUploads] = useState([]);
   const [reports, setReports] = useState([]);
+  const [competitors, setCompetitors] = useState([]);
+  const [newCompetitor, setNewCompetitor] = useState("");
   const [selectedPlatform, setSelectedPlatform] = useState("instagram");
   const [busy, setBusy] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const fileRef = useRef(null);
 
   const load = async () => {
     try {
-      const [p, u, r] = await Promise.all([
+      const [p, u, r, c] = await Promise.all([
         axios.get(`${API}/projects/${projectId}`),
         axios.get(`${API}/projects/${projectId}/uploads`),
         axios.get(`${API}/projects/${projectId}/reports`),
+        axios.get(`${API}/projects/${projectId}/competitors`).catch(() => ({ data: { handles: [] } })),
       ]);
       setProject(p.data);
       setUploads(u.data);
       setReports(r.data);
+      setCompetitors(c.data.handles || []);
     } catch {
       toast.error("Could not load project");
     }
@@ -87,8 +92,43 @@ export default function ProjectDetail() {
       const r = await axios.post(`${API}/projects/${projectId}/analyze`);
       navigate(`/projects/${projectId}/analyze/${r.data.report_id}`);
     } catch (e) {
-      toast.error(e.response?.data?.detail || "Analysis failed to start");
+      if (e.response?.status === 402) {
+        setShowPaywall(true);
+      } else {
+        toast.error(e.response?.data?.detail || "Analysis failed to start");
+      }
       setAnalyzing(false);
+    }
+  };
+
+  const handleAddCompetitor = async () => {
+    if (!newCompetitor.trim()) return;
+    const handle = newCompetitor.trim().replace(/^@/, "");
+    try {
+      await axios.post(`${API}/projects/${projectId}/competitors`, { handle });
+      setNewCompetitor("");
+      load();
+    } catch {
+      toast.error("Failed to add competitor");
+    }
+  };
+
+  const handleRemoveCompetitor = async (handle) => {
+    try {
+      await axios.delete(`${API}/projects/${projectId}/competitors/${handle}`);
+      load();
+    } catch {
+      toast.error("Failed to remove competitor");
+    }
+  };
+
+  const handleUpgrade = async () => {
+    try {
+      await axios.post(`${API}/users/me/upgrade`);
+      toast.success("Mock upgraded to Pro! You can now run unlimited reports.");
+      setShowPaywall(false);
+    } catch {
+      toast.error("Upgrade failed");
     }
   };
 
@@ -191,6 +231,39 @@ export default function ProjectDetail() {
                 </div>
               )}
             </div>
+
+            {/* Competitor Watchlist */}
+            <div className="brutal-card p-6">
+              <div className="overline text-[#0033FF] mb-4">// competitor watchlist</div>
+              <p className="text-sm text-[#4A4A4A] mb-4">Add competitor handles. The Competitor Insight agent will track and compare their strategy to yours.</p>
+              
+              <div className="flex gap-2 mb-4">
+                <input 
+                  type="text" 
+                  value={newCompetitor}
+                  onChange={(e) => setNewCompetitor(e.target.value)}
+                  placeholder="e.g. @mrbeast" 
+                  className="flex-1 border-2 border-[#0A0A0A] p-2 text-sm font-mono outline-none focus:ring-2 ring-[#0033FF]"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCompetitor()}
+                />
+                <button onClick={handleAddCompetitor} className="btn-secondary !py-2 !px-4 text-xs">Add</button>
+              </div>
+
+              {competitors.length === 0 ? (
+                <div className="text-sm text-[#8A8A8A] text-center py-2">No competitors tracking yet.</div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {competitors.map(c => (
+                    <div key={c} className="flex items-center gap-2 border-2 border-[#0A0A0A] bg-white px-3 py-1 text-sm font-mono">
+                      @{c}
+                      <button onClick={() => handleRemoveCompetitor(c)} className="text-[#FF3B00] hover:text-[#CC2F00]">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
 
           {/* RIGHT: action + reports */}
@@ -265,6 +338,29 @@ export default function ProjectDetail() {
         {reports.some(r => r.status === "complete") && (
           <div className="mt-8">
             <ChatPanel projectId={projectId} />
+          </div>
+        )}
+
+        {/* Mock Paywall Overlay */}
+        {showPaywall && (
+          <div className="fixed inset-0 bg-[#0A0A0A]/80 z-50 flex items-center justify-center p-4">
+            <div className="brutal-card p-8 sm:p-12 max-w-lg w-full bg-white relative">
+              <button onClick={() => setShowPaywall(false)} className="absolute top-4 right-4 text-[#8A8A8A] hover:text-[#0A0A0A]">
+                <X size={24} />
+              </button>
+              <div className="overline text-[#FF3B00] mb-4">// upgrade required</div>
+              <h2 className="font-display font-black text-4xl tracking-tighter mb-4">Free limit reached</h2>
+              <p className="text-[#4A4A4A] mb-8">
+                You've run your first analysis for free! To continue running unlimited reports and unlock advanced market intel, upgrade to the Creator Pro plan.
+              </p>
+              <div className="border-2 border-[#0A0A0A] p-6 mb-8 text-center bg-[#F4F4F0]">
+                <div className="font-display font-black text-3xl">$29<span className="text-lg text-[#8A8A8A] font-normal">/mo</span></div>
+                <div className="text-sm font-mono mt-2 text-[#0033FF]">Unlimited Brands & Reports</div>
+              </div>
+              <button onClick={handleUpgrade} className="w-full btn-primary py-4 text-lg">
+                Upgrade to Pro (Mock)
+              </button>
+            </div>
           </div>
         )}
       </main>
